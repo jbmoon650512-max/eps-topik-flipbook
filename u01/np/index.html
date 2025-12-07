@@ -1,118 +1,105 @@
 <!DOCTYPE html>
-<html lang="np">
+<html lang="ko">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>EPS-TOPIK 1 | Unit 1 E-Book (NP)</title>
   <style>
     body {
       margin: 0;
       padding: 0;
-      background-color: #000;
-      color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-    .wrapper {
-      max-width: 900px;
-      margin: 0 auto;
-      padding: 20px;
+      background-color: #111111;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       text-align: center;
     }
+
     h1 {
-      font-size: 24px;
-      margin-bottom: 8px;
+      margin-top: 24px;
+      font-size: 26px;
+      font-weight: 700;
     }
-    .subtitle {
+
+    p.info {
+      margin-top: 4px;
+      margin-bottom: 24px;
       font-size: 14px;
-      color: #ccc;
-      margin-bottom: 18px;
+      color: #cccccc;
     }
-    .ebook-frame {
-      background-color: #111;
+
+    .ebook-wrapper {
+      max-width: 980px;
+      margin: 0 auto 40px auto;
+      padding: 16px;
+      background-color: #000000;
       border-radius: 8px;
-      padding: 14px;
-      max-height: 650px; /* 한 화면만 보이게 하고 내부에서 스크롤 */
-      overflow-y: auto;
       box-sizing: border-box;
     }
-    .ebook-page {
-      margin-bottom: 16px;
+
+    .scroll-area {
+      width: 100%;
+      height: 620px;        /* 화면 한 장 + 약간의 여백 */
+      overflow-y: scroll;   /* 내부만 스크롤 */
+      background-color: #000000;
+      box-sizing: border-box;
+      padding: 0;
     }
-    .ebook-page img {
-      max-width: 100%;
-      height: auto;
+
+    .scroll-area img {
       display: block;
+      width: 100%;
+      height: auto;
       margin: 0 auto;
-      border-radius: 4px;
+      border: none;
     }
-    .footer {
-      margin-top: 16px;
+
+    .footer-text {
       font-size: 13px;
-      color: #ccc;
+      color: #bbbbbb;
+      margin-bottom: 40px;
+    }
+
+    a {
+      color: #66c0ff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <div class="wrapper">
-    <h1>EPS-TOPIK 1 | Unit 1 E-Book (NP)</h1>
-    <div class="subtitle">Scroll inside the black area to read all pages.</div>
+  <h1>EPS-TOPIK 1 | Unit 1 E-Book (नेपाली)</h1>
+  <p class="info">
+    아래 검은 박스 안을 위/아래로 스크롤하면서<br />
+    표지부터 끝 페이지까지 읽어 보세요.
+  </p>
 
-    <div class="ebook-frame">
-
-      <div class="ebook-page">
-        <img src="cover.png" alt="Cover">
-      </div>
-
-      <div class="ebook-page">
-        <img src="page01.png" alt="Page 1">
-      </div>
-      <div class="ebook-page">
-        <img src="page02.png" alt="Page 2">
-      </div>
-      <div class="ebook-page">
-        <img src="page03.png" alt="Page 3">
-      </div>
-      <div class="ebook-page">
-        <img src="page04.png" alt="Page 4">
-      </div>
-      <div class="ebook-page">
-        <img src="page05.png" alt="Page 5">
-      </div>
-      <div class="ebook-page">
-        <img src="page06.png" alt="Page 6">
-      </div>
-      <div class="ebook-page">
-        <img src="page07.png" alt="Page 7">
-      </div>
-      <div class="ebook-page">
-        <img src="page08.png" alt="Page 8">
-      </div>
-      <div class="ebook-page">
-        <img src="page09.png" alt="Page 9">
-      </div>
-      <div class="ebook-page">
-        <img src="page10.png" alt="Page 10">
-      </div>
-      <div class="ebook-page">
-        <img src="page11.png" alt="Page 11">
-      </div>
-      <div class="ebook-page">
-        <img src="page12.png" alt="Page 12">
-      </div>
-      <div class="ebook-page">
-        <img src="page13.png" alt="Page 13">
-      </div>
-      <div class="ebook-page">
-        <img src="page14.png" alt="Page 14">
-      </div>
-      <div class="ebook-page">
-        <img src="page15.png" alt="Page 15">
-      </div>
-
-    </div>
-
-    <div class="footer">
-      위/아래로 스크롤하여 모든 페이지를 읽어 보세요.
+  <div class="ebook-wrapper">
+    <div class="scroll-area">
+      <!-- 여기서부터 이미지 16장 (cover + page01~page15) -->
+      <img src="cover.png" alt="Cover" />
+      <img src="page01.png" alt="Page 1" />
+      <img src="page02.png" alt="Page 2" />
+      <img src="page03.png" alt="Page 3" />
+      <img src="page04.png" alt="Page 4" />
+      <img src="page05.png" alt="Page 5" />
+      <img src="page06.png" alt="Page 6" />
+      <img src="page07.png" alt="Page 7" />
+      <img src="page08.png" alt="Page 8" />
+      <img src="page09.png" alt="Page 9" />
+      <img src="page10.png" alt="Page 10" />
+      <img src="page11.png" alt="Page 11" />
+      <img src="page12.png" alt="Page 12" />
+      <img src="page13.png" alt="Page 13" />
+      <img src="page14.png" alt="Page 14" />
+      <img src="page15.png" alt="Page 15" />
     </div>
   </div>
+
+  <p class="footer-text">
+    이 e-Book은 EPS-TOPIK 네팔어 학습자를 위한 테스트 버전입니다.<br />
+    GitHub Pages에서 직접 스크롤하여 복습용으로 사용하세요.
+  </p>
 </body>
 </html>
