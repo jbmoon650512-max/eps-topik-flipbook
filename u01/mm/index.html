@@ -1,1 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>EPS-TOPIK 1 | Unit 1 E-Book</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:#111;
+      color:#f5f5f5;
+      display:flex;
+      justify-content:center;
+      padding:20px 8px;
+    }
+    .ebook-wrapper {
+      width:100%;
+      max-width:980px;
+      background:#000;
+      border-radius:12px;
+      box-shadow:0 14px 40px rgba(0,0,0,0.6);
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .ebook-header {
+      text-align:center;
+      padding:4px 8px 8px;
+    }
+    .ebook-header h1 {
+      font-size:1.1rem;
+      font-weight:600;
+      margin-bottom:4px;
+    }
+    .ebook-header p {
+      font-size:0.85rem;
+      color:#bbbbbb;
+    }
+    /* 한 화면만 보이고 내부만 스크롤되는 영역 */
+    .page-scroll {
+      height:640px;
+      overflow-y:auto;
+      border-radius:10px;
+      background:#111;
+      padding:8px;
+    }
+    .page-scroll img {
+      width:100%;
+      display:block;
+      margin-bottom:12px;
+      border-radius:8px;
+    }
+    .page-scroll::-webkit-scrollbar {
+      width:8px;
+    }
+    .page-scroll::-webkit-scrollbar-track {
+      background:#111;
+    }
+    .page-scroll::-webkit-scrollbar-thumb {
+      background:#444;
+      border-radius:4px;
+    }
+    .page-scroll::-webkit-scrollbar-thumb:hover {
+      background:#666;
+    }
+    .hint {
+      font-size:0.8rem;
+      text-align:center;
+      color:#aaaaaa;
+    }
+  </style>
+</head>
+<body>
+  <div class="ebook-wrapper">
+    <div class="ebook-header">
+      <h1>EPS-TOPIK 1 | Unit 1 E-Book</h1>
+      <p>Scroll inside the black area to read all pages.</p>
+    </div>
+
+    <div class="page-scroll" id="pages"></div>
+
+    <p class="hint">위/아래로 스크롤하여 모든 페이지를 읽어 보세요.</p>
+  </div>
+
+  <script>
+    // Unit 1: 표지(cover) + 본문 15페이지 = 총 16장
+    const totalPages = 15;
+    const pagesDiv = document.getElementById("pages");
+
+    function addImage(src, alt) {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = alt;
+      pagesDiv.appendChild(img);
+    }
+
+    // 1) 표지 (인포그래픽)
+    addImage("cover.png", "Cover");
+
+    // 2) 본문 페이지 (page01 ~ page15)
+    for (let i = 1; i <= totalPages; i++) {
+      const no = String(i).padStart(2, "0");  // 01, 02, ...
+      addImage(`page${no}.png`, `Page ${i}`);
+    }
+  </script>
+</body>
+</html>
 
