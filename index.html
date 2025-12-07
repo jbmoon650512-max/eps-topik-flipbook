@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>EPS-TOPIK Flipbook</title>
+<style>
+body { background:#111; margin:0; padding:20px; }
+#flipbook { margin:auto; }
+img { width:100%; }
+</style>
+</head>
+<body>
+
+<div id="flipbook"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/turn.js@4/turn.min.js"></script>
+
+<script>
+var pages = [
+"u01_p01.png","u01_p02.png","u01_p03.png","u01_p04.png","u01_p05.png","u01_p06.png","u01_p07.png","u01_p08.png","u01_p09.png","u01_p10.png","u01_p11.png","u01_p12.png","u01_p13.png","u01_p14.png","u01_p15.png"
+];
+
+$("#flipbook").turn({
+    width: 900,
+    height: 600,
+    autoCenter: true
+});
+
+pages.forEach(function(src) {
+  $("#flipbook").turn("addPage",
+    $("<div />").html("<img src='"+src+"'>")
+  );
+});
+</script>
+
+</body>
+</html>
