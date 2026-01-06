@@ -1,1 +1,36 @@
+{
+  "version": "1.0.0",
+  "items": [
+    {
+      "lang": "PH",
+      "name": "Filipino",
+      "href": "/ph/",
+      "flag": "https://raw.githubusercontent.com/jbmoon650512-max/eps-topik-flipbook/main/assets/flags/ph.png"
+    },
+    {
+      "lang": "VN",
+      "name": "Tiếng Việt",
+      "href": "/vn/",
+      "flag": "https://raw.githubusercontent.com/jbmoon650512-max/eps-topik-flipbook/main/assets/flags/vn.png"
+    },
+    {
+      "lang": "NP",
+      "name": "Nepali",
+      "href": "/np/",
+      "flag": "https://raw.githubusercontent.com/jbmoon650512-max/eps-topik-flipbook/main/assets/flags/np.png"
+    },
+    {
+      "lang": "MM",
+      "name": "Myanmar",
+      "href": "/mm/",
+      "flag": "https://raw.githubusercontent.com/jbmoon650512-max/eps-topik-flipbook/main/assets/flags/mm.png"
+    },
+    {
+      "lang": "ID",
+      "name": "Indonesia",
+      "href": "/id/",
+      "flag": "https://raw.githubusercontent.com/jbmoon650512-max/eps-topik-flipbook/main/assets/flags/id.png"
+    }
+  ]
+}
 
