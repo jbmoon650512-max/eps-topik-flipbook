@@ -1,1 +1,17 @@
-
+{
+  "unit": "01",
+  "title": "자기소개",
+  "language": "PH",
+  "words": [
+    {
+      "kr": "이름",
+      "roman": "ireum",
+      "local": "pangalan"
+    },
+    {
+      "kr": "나라",
+      "roman": "nara",
+      "local": "bansa"
+    }
+  ]
+}
