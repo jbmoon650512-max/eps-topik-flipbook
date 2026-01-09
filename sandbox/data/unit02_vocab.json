@@ -1,0 +1,9 @@
+{
+  "unit": "02",
+  "title": "테스트",
+  "language": "PH",
+  "words": [
+    { "kr": "안녕하세요", "roman": "annyeonghaseyo", "local": "kumusta" },
+    { "kr": "감사합니다", "roman": "gamsahamnida", "local": "salamat" }
+  ]
+}
