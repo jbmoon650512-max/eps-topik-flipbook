@@ -1,31 +1,35 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EPS-TOPIK Flipbook</title>
-  <style>
-    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;background:#232a33;color:#fff}
-    .c{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px}
-    a{color:#7dd3fc;font-weight:900;text-decoration:none}
-    .box{max-width:860px;background:#0b1220;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px}
-    .t{font-size:22px;font-weight:900;margin:0 0 10px}
-    .p{opacity:.85;line-height:1.5}
-    code{background:rgba(255,255,255,.12);padding:2px 6px;border-radius:8px}
-  </style>
-</head>
-<body>
-  <div class="c">
-    <div class="box">
-      <div class="t">EPS-TOPIK Secure Viewer</div>
-      <div class="p">
-        Use <code>viewer.html?file=PDF_URL</code><br/>
-        Example: <br/>
-        <a href="./viewer.html?file=https%3A%2F%2Fjbmoon650512-max.github.io%2Feps-topik-flipbook%2Fpdf%2Feps%2Fu01%2Fid.pdf">
-          Open sample (u01/id.pdf)
-        </a>
-      </div>
-    </div>
-  </div>
-</body>
-</html>
+<script>
+  // --- FILE PARAM NORMALIZER (PASTE THIS NEAR THE TOP OF YOUR SCRIPT) ---
+  const params = new URLSearchParams(location.search);
+  let file = params.get("file") || "";
+
+  // 1) If user passed a full URL that points to THIS site, convert to relative path.
+  //    Example:
+  //    https://jbmoon650512-max.github.io/eps-topik-flipbook/pdf/eps/u01/ph.pdf
+  //    -> pdf/eps/u01/ph.pdf
+  if (file.startsWith("http")) {
+    try {
+      const u = new URL(file);
+      // If same origin + same repo base path, strip it to relative.
+      const base = location.origin + location.pathname.replace(/\/index\.html?$/, "/");
+      if (file.startsWith(base)) file = file.slice(base.length);
+      // If same origin but different path, still strip origin.
+      if (u.origin === location.origin && file.startsWith(location.origin)) {
+        file = file.replace(location.origin, "");
+        file = file.replace(/^\/+/, "");
+      }
+    } catch (e) {}
+  }
+
+  // 2) Hard block cross-origin PDFs (prevents white box / silent failure)
+  if (file.startsWith("http")) {
+    document.body.innerHTML = "<div style='color:#fff;font:16px/1.6 system-ui;padding:24px;'>PDF must be loaded via a relative path like <b>pdf/eps/u01/ph.pdf</b>.</div>";
+    throw new Error("Cross-origin PDF blocked. Use relative path.");
+  }
+
+  // 3) Ensure no leading slash (keeps it relative to repo base)
+  file = file.replace(/^\/+/, "");
+
+  // Expose as global for the rest of your viewer code
+  window.__PDF_FILE__ = file;
+</script>
