@@ -1,1 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EPS-TOPIK Slide Viewer</title>
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #020617;
+      color: #e5e7eb;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #toolbar {
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #020617;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    button {
+      background: #111827;
+      color: #e5e7eb;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; }
+    #pageInfo {
+      min-width: 120px;
+      text-align: center;
+      font-weight: 800;
+    }
+    #viewer {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #020617;
+    }
+    canvas {
+      max-width: 100%;
+      max-height: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toolbar">
+    <button id="prev">◀ Prev</button>
+    <div id="pageInfo">– / –</div>
+    <button id="next">Next ▶</button>
+  </div>
+
+  <div id="viewer">
+    <canvas id="pdfCanvas"></canvas>
+  </div>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const unit = params.get('unit') || 'u01';
+  const lang = params.get('lang') || 'ph';
+
+  const pdfUrl =
+    `https://jbmoon650512-max.github.io/eps-topik-flipbook/docs/pdf/eps/${unit}/${lang}.pdf`;
+
+  const canvas = document.getElementById('pdfCanvas');
+  const ctx = canvas.getContext('2d');
+
+  let pdfDoc = null;
+  let pageNum = 1;
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+    pdfDoc = pdf;
+    renderPage(pageNum);
+  });
+
+  function renderPage(num) {
+    pdfDoc.getPage(num).then(page => {
+      const viewport = page.getViewport({ scale: 1.4 });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      page.render({ canvasContext: ctx, viewport });
+      document.getElementById('pageInfo').textContent =
+        `${num} / ${pdfDoc.numPages}`;
+
+      document.getElementById('prev').disabled = (num <= 1);
+      document.getElementById('next').disabled = (num >= pdfDoc.numPages);
+    });
+  }
+
+  document.getElementById('prev').onclick = () => {
+    if (pageNum > 1) renderPage(--pageNum);
+  };
+  document.getElementById('next').onclick = () => {
+    if (pageNum < pdfDoc.numPages) renderPage(++pageNum);
+  };
+</script>
+
+</body>
+</html>
 
