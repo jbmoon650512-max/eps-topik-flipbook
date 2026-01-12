@@ -1,163 +1,31 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EPS-TOPIK Secure Viewer</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <style>
-        /* 화면 전체 꽉 채우기 및 스크롤 금지 */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #2d3436; }
-        
-        /* 전체 레이아웃: 상단 툴바 + 하단 뷰어 */
-        body { display: flex; flex-direction: column; }
-
-        /* 1. 상단 툴바 (고정) */
-        #toolbar {
-            flex: 0 0 50px; /* 높이 50px 고정 */
-            background: #1a1a1a;
-            display: flex; justify-content: center; align-items: center; gap: 20px;
-            color: white; font-family: sans-serif; font-weight: bold; font-size: 14px;
-            border-bottom: 1px solid #444;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            z-index: 10;
-        }
-
-        button {
-            background: #444; border: 1px solid #555; color: white; 
-            padding: 8px 16px; border-radius: 6px; cursor: pointer; 
-            font-size: 14px; transition: 0.2s;
-        }
-        button:hover { background: #666; }
-        button:active { transform: scale(0.95); }
-
-        /* 2. 뷰어 영역 (남은 공간 다 쓰기) */
-        #viewer-container {
-            flex: 1; /* 남은 높이 모두 차지 */
-            width: 100%;
-            background: #525659;
-            display: flex;
-            justify-content: center;
-            align-items: center; /* 정중앙 정렬 */
-            overflow: hidden; /* ★ 스크롤 절대 금지 ★ */
-            position: relative;
-        }
-
-        /* 캔버스 (PDF 화면) */
-        canvas {
-            display: block;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            max-width: 100%; max-height: 100%; /* 부모 밖으로 못 나가게 */
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EPS-TOPIK Flipbook</title>
+  <style>
+    html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;background:#232a33;color:#fff}
+    .c{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:22px}
+    a{color:#7dd3fc;font-weight:900;text-decoration:none}
+    .box{max-width:860px;background:#0b1220;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:22px}
+    .t{font-size:22px;font-weight:900;margin:0 0 10px}
+    .p{opacity:.85;line-height:1.5}
+    code{background:rgba(255,255,255,.12);padding:2px 6px;border-radius:8px}
+  </style>
 </head>
-<body oncontextmenu="return false;"> <div id="toolbar">
-        <button id="prev">◀ Prev</button>
-        <span><span id="page_num">1</span> / <span id="page_count">--</span></span>
-        <button id="next">Next ▶</button>
+<body>
+  <div class="c">
+    <div class="box">
+      <div class="t">EPS-TOPIK Secure Viewer</div>
+      <div class="p">
+        Use <code>viewer.html?file=PDF_URL</code><br/>
+        Example: <br/>
+        <a href="./viewer.html?file=https%3A%2F%2Fjbmoon650512-max.github.io%2Feps-topik-flipbook%2Fpdf%2Feps%2Fu01%2Fid.pdf">
+          Open sample (u01/id.pdf)
+        </a>
+      </div>
     </div>
-
-    <div id="viewer-container">
-        <canvas id="the-canvas"></canvas>
-    </div>
-
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const file = urlParams.get('file'); 
-
-        // PDF.js 워커 설정
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-        var pdfDoc = null,
-            pageNum = 1,
-            pageRendering = false,
-            pageNumPending = null,
-            canvas = document.getElementById('the-canvas'),
-            ctx = canvas.getContext('2d'),
-            container = document.getElementById('viewer-container');
-
-        if (!file) {
-            document.body.innerHTML = "<h3 style='color:white; text-align:center; margin-top:50px;'>No file specified</h3>";
-        } else {
-            // PDF 로드
-            pdfjsLib.getDocument(file).promise.then(function(pdfDoc_) {
-                pdfDoc = pdfDoc_;
-                document.getElementById('page_count').textContent = pdfDoc.numPages;
-                renderPage(pageNum);
-            }).catch(function(error) {
-                console.error('Error loading PDF:', error);
-                document.body.innerHTML = "<h3 style='color:white; text-align:center; margin-top:50px;'>Error loading PDF</h3>";
-            });
-        }
-
-        // ★ 핵심: 화면 크기에 맞춰 PDF 크기 자동 조절 (Auto-Fit)
-        function renderPage(num) {
-            pageRendering = true;
-            
-            pdfDoc.getPage(num).then(function(page) {
-                // 1. 먼저 배율 1로 뷰포트를 가져와서 원본 비율 확인
-                var unscaledViewport = page.getViewport({scale: 1});
-                
-                // 2. 컨테이너(화면)의 크기 구하기
-                var containerWidth = container.clientWidth;
-                var containerHeight = container.clientHeight;
-
-                // 3. 가로/세로 중 더 좁은 쪽에 맞춰 비율 계산 (여백 10px 제외)
-                var scaleX = (containerWidth - 20) / unscaledViewport.width;
-                var scaleY = (containerHeight - 20) / unscaledViewport.height;
-                var scale = Math.min(scaleX, scaleY); // 화면을 넘치지 않게 작은 쪽 기준
-
-                // 4. 계산된 비율로 최종 뷰포트 생성
-                var viewport = page.getViewport({scale: scale});
-
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                var renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-                var renderTask = page.render(renderContext);
-
-                renderTask.promise.then(function() {
-                    pageRendering = false;
-                    if (pageNumPending !== null) {
-                        renderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                });
-            });
-
-            document.getElementById('page_num').textContent = num;
-        }
-
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            } else {
-                renderPage(num);
-            }
-        }
-
-        function onPrevPage() {
-            if (pageNum <= 1) return;
-            pageNum--;
-            queueRenderPage(pageNum);
-        }
-
-        function onNextPage() {
-            if (pageNum >= pdfDoc.numPages) return;
-            pageNum++;
-            queueRenderPage(pageNum);
-        }
-
-        document.getElementById('prev').addEventListener('click', onPrevPage);
-        document.getElementById('next').addEventListener('click', onNextPage);
-
-        // ★ 창 크기가 바뀌거나 회전하면(모바일 가로/세로) 다시 그리기
-        window.addEventListener('resize', function() {
-            if(pdfDoc) renderPage(pageNum);
-        });
-    </script>
+  </div>
 </body>
 </html>
