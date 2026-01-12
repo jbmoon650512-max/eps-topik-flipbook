@@ -2,14 +2,160 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<title>EPS-TOPIK Slide Viewer</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EPS-TOPIK Slides</title>
+
 <style>
-  html,body{margin:0;height:100%;background:#0b1220;color:#fff;font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;display:flex;align-items:center;justify-content:center;}
-  .box{opacity:.75;font-weight:900;font-size:14px}
+  html, body{
+    margin:0; padding:0;
+    width:100%; height:100%;
+    overflow:hidden;                 /* 바깥 스크롤 제거 */
+    background:#0b1220;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;
+  }
+
+  .viewer-wrap{
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;                 /* 바깥 스크롤 제거 */
+  }
+
+  .top-bar{
+    height:56px;
+    flex:0 0 56px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    background:#020617;
+    color:#fff;
+    font-weight:900;
+    overflow:hidden;
+  }
+
+  .nav-btn{
+    background:#2563eb;
+    border:none;
+    color:#fff;
+    padding:8px 14px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:900;
+  }
+  .nav-btn:disabled{
+    opacity:.3;
+    cursor:not-allowed;
+  }
+
+  .page-ind{
+    font-weight:900;
+    font-size:14px;
+    min-width:80px;
+    text-align:center;
+  }
+
+  .frame{
+    flex:1 1 auto;
+    background:#000;
+    overflow:hidden;                 /* 여기서도 스크롤 제거 */
+  }
+
+  iframe{
+    width:100%;
+    height:100%;
+    border:0;
+    overflow:hidden;                 /* iframe 자체 스크롤 제거 시도 */
+    display:block;
+  }
 </style>
 </head>
+
 <body>
-  <div class="box">EPS-TOPIK Slides Viewer</div>
+<div class="viewer-wrap">
+  <div class="top-bar">
+    <button class="nav-btn" id="prev">◀ Prev</button>
+    <div class="page-ind" id="page">- / -</div>
+    <button class="nav-btn" id="next">Next ▶</button>
+  </div>
+
+  <div class="frame">
+    <iframe id="pdfFrame" scrolling="no"></iframe>
+  </div>
+</div>
+
+<script>
+  // URL: viewer.html?unit=u01&lang=ph
+  const params = new URLSearchParams(location.search);
+  const unit = (params.get("unit") || "u01").toLowerCase();
+  const lang = (params.get("lang") || "ph").toLowerCase();
+
+  // PDF URL (GitHub Pages)
+  const pdfUrl = `https://jbmoon650512-max.github.io/eps-topik-flipbook/pdf/eps/${unit}/${lang}.pdf`;
+
+  // PDF.js viewer (Mozilla hosted)
+  const viewerBase = "https://mozilla.github.io/pdf.js/web/viewer.html?file=";
+
+  const iframe = document.getElementById("pdfFrame");
+  iframe.src = viewerBase + encodeURIComponent(pdfUrl);
+
+  const pageEl = document.getElementById("page");
+  const prevBtn = document.getElementById("prev");
+  const nextBtn = document.getElementById("next");
+
+  let pdfWin = null;
+  let total = 1;
+
+  iframe.onload = () => {
+    pdfWin = iframe.contentWindow;
+
+    // PDF.js 로딩 완료까지 폴링
+    const t = setInterval(() => {
+      try{
+        const app = pdfWin.PDFViewerApplication;
+        if(app && app.pagesCount){
+          total = app.pagesCount;
+          update();
+          clearInterval(t);
+
+          // PDF.js 내부에서도 스크롤바가 뜨는 경우가 있어 강제 CSS 주입
+          try{
+            const doc = pdfWin.document;
+            const style = doc.createElement("style");
+            style.textContent = `
+              html, body { overflow: hidden !important; }
+              #viewerContainer { overflow: hidden !important; }
+              #mainContainer { overflow: hidden !important; }
+            `;
+            doc.head.appendChild(style);
+          }catch(e){}
+        }
+      }catch(e){}
+    }, 250);
+  };
+
+  function update(){
+    try{
+      const app = pdfWin.PDFViewerApplication;
+      pageEl.textContent = `${app.page} / ${total}`;
+      prevBtn.disabled = app.page <= 1;
+      nextBtn.disabled = app.page >= total;
+    }catch(e){
+      pageEl.textContent = "- / -";
+    }
+  }
+
+  prevBtn.onclick = () => {
+    const app = pdfWin.PDFViewerApplication;
+    app.page = Math.max(1, app.page - 1);
+    update();
+  };
+
+  nextBtn.onclick = () => {
+    const app = pdfWin.PDFViewerApplication;
+    app.page = Math.min(total, app.page + 1);
+    update();
+  };
+</script>
 </body>
 </html>
