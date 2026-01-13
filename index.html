@@ -9,11 +9,8 @@
     :root{
       --bg:#0b1220;
       --panel:#0f172a;
-      --panel2:#111827;
       --text:#e5e7eb;
       --muted:#94a3b8;
-      --btn:#1f2937;
-      --btn2:#111827;
       --border:rgba(255,255,255,.10);
     }
 
@@ -25,13 +22,13 @@
       overflow:hidden;
     }
 
-    /* ✅ iframe 내부 스크롤바도 제거(브라우저별) */
+    /* ✅ remove scrollbars (browser-wide) */
     *{
       box-sizing:border-box;
-      -ms-overflow-style:none;     /* IE/Edge legacy */
-      scrollbar-width:none;        /* Firefox */
+      -ms-overflow-style:none;
+      scrollbar-width:none;
     }
-    *::-webkit-scrollbar{ width:0; height:0; } /* Chrome/Safari */
+    *::-webkit-scrollbar{ width:0; height:0; }
 
     .wrap{
       height:100%;
@@ -75,17 +72,23 @@
       gap:10px;
       align-items:center;
       min-width:190px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
     .brand small{
       color:var(--muted);
       font-weight:800;
       font-size:12px;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .ctrl{
       display:flex;
       align-items:center;
       gap:10px;
+      flex-shrink:0;
     }
 
     .btn{
@@ -122,7 +125,7 @@
       align-items:center;
       justify-content:center;
       position:relative;
-      overflow:hidden; /* ✅ stage도 scroll 금지 */
+      overflow:hidden; /* ✅ stage also no scroll */
     }
 
     .paper{
@@ -209,19 +212,20 @@
         </div>
 
         <div class="ctrl">
-          <button class="btn" id="prevBtn">◀ Prev</button>
+          <button class="btn" id="prevBtn" type="button">◀ Prev</button>
           <div class="page" id="pageInd">- / -</div>
-          <button class="btn" id="nextBtn">Next ▶</button>
+          <button class="btn" id="nextBtn" type="button">Next ▶</button>
         </div>
       </div>
 
       <div class="stage">
         <div class="paper">
-          <canvas id="canvas"></canvas>
+          <canvas id="canvas" aria-label="PDF page canvas"></canvas>
         </div>
+
         <div class="hint">Page-Turn Mode · No Scroll</div>
 
-        <div class="error" id="err">
+        <div class="error" id="err" role="alert" aria-live="polite">
           <div class="box">
             <p><strong>PDF Load Failed.</strong></p>
             <p id="errMsg"></p>
@@ -231,54 +235,64 @@
     </div>
   </div>
 
-  <!-- ✅ IMPORTANT: pdf.min.js / pdf.worker.min.js는 index.html과 같은 폴더(루트)에 두세요 -->
+  <!-- ✅ IMPORTANT: Put pdf.min.js / pdf.worker.min.js next to index.html (same folder). -->
   <script src="pdf.min.js"></script>
   <script>
     (function(){
       const $ = (id)=>document.getElementById(id);
 
-      const prevBtn = $("prevBtn");
-      const nextBtn = $("nextBtn");
-      const pageInd = $("pageInd");
+      const prevBtn  = $("prevBtn");
+      const nextBtn  = $("nextBtn");
+      const pageInd  = $("pageInd");
       const fileName = $("fileName");
-      const canvas = $("canvas");
-      const err = $("err");
-      const errMsg = $("errMsg");
+      const canvas   = $("canvas");
+      const err      = $("err");
+      const errMsg   = $("errMsg");
 
       // ---------------------------
-      // 1) Resolve file param safely
+      // Helpers
       // ---------------------------
+      function showError(message){
+        err.classList.add("show");
+        errMsg.textContent = message || "Unknown error.";
+      }
+      function hideError(){
+        err.classList.remove("show");
+        errMsg.textContent = "";
+      }
+
       function getParam(name){
         const u = new URL(location.href);
-        return u.searchParams.get(name) || "";
+        return (u.searchParams.get(name) || "").trim();
       }
 
       // repo root: https://{user}.github.io/{repo}/
       function repoRootUrl(){
         const parts = location.pathname.split("/").filter(Boolean);
-        // e.g. ["eps-topik-flipbook","index.html"]
         const repo = parts.length ? parts[0] : "";
         return location.origin + "/" + repo + "/";
       }
 
+      // file param resolution rules:
+      // 1) absolute URL: keep
+      // 2) root-relative "/pdf/..." => origin + path
+      // 3) relative "pdf/eps/u01/ph.pdf" => repoRoot + relative
       function resolveFileUrl(file){
         if(!file) return "";
         const trimmed = file.trim();
 
-        // absolute URL
         if(/^https?:\/\//i.test(trimmed)) return trimmed;
-
-        // root-relative "/pdf/..."  -> make it absolute to origin
         if(trimmed.startsWith("/")) return location.origin + trimmed;
 
-        // normal relative "pdf/eps/u01/ph.pdf" -> resolve against repo root
         return new URL(trimmed, repoRootUrl()).toString();
       }
 
+      // ---------------------------
+      // Read file param + display name
+      // ---------------------------
       const fileParam = getParam("file") || getParam("f") || "";
       const pdfUrl = resolveFileUrl(fileParam);
 
-      // show file name
       try{
         fileName.textContent = fileParam ? ("· " + decodeURIComponent(fileParam).split("/").pop()) : "";
       }catch(e){
@@ -286,32 +300,20 @@
       }
 
       // ---------------------------
-      // 2) PDF.js setup
+      // PDF.js setup
       // ---------------------------
       if(typeof window.pdfjsLib === "undefined"){
-        err.classList.add("show");
-        errMsg.textContent = "pdfjsLib is not found. Put pdf.min.js next to index.html.";
+        showError("pdfjsLib is not found. Put pdf.min.js next to index.html.");
         return;
       }
 
-      // worker (same folder)
       try{
         pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
-      }catch(e){}
+      }catch(e){ /* ignore */ }
 
       let pdfDoc = null;
       let pageNum = 1;
       let renderTask = null;
-
-      function showError(message){
-        err.classList.add("show");
-        errMsg.textContent = message || "Unknown error.";
-      }
-
-      function hideError(){
-        err.classList.remove("show");
-        errMsg.textContent = "";
-      }
 
       function setButtons(){
         if(!pdfDoc){
@@ -325,43 +327,44 @@
         pageInd.textContent = pageNum + " / " + pdfDoc.numPages;
       }
 
-      // fit page to available stage size (no scroll)
+      // Fit-to-stage rendering (no scroll)
       async function renderPage(num){
         if(!pdfDoc) return;
         hideError();
 
-        // cancel prior rendering to prevent race
-        if(renderTask && renderTask.cancel){
+        // cancel previous render
+        if(renderTask && typeof renderTask.cancel === "function"){
           try{ renderTask.cancel(); }catch(e){}
         }
 
-        const page = await pdfDoc.getPage(num);
-
-        // compute scale
-        const viewport1 = page.getViewport({ scale: 1 });
-        const container = canvas.parentElement; // .paper
-        const maxW = container.clientWidth - 32;
-        const maxH = container.clientHeight - 32;
-
-        const scale = Math.min(maxW / viewport1.width, maxH / viewport1.height);
-        const viewport = page.getViewport({ scale: Math.max(scale, 0.1) });
-
-        const ctx = canvas.getContext("2d", { alpha: false });
-
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-
-        const renderContext = { canvasContext: ctx, viewport };
-        renderTask = page.render(renderContext);
-
         try{
+          const page = await pdfDoc.getPage(num);
+
+          const viewport1 = page.getViewport({ scale: 1 });
+          const container = canvas.parentElement; // .paper
+          const maxW = container.clientWidth  - 32;
+          const maxH = container.clientHeight - 32;
+
+          const scale = Math.min(maxW / viewport1.width, maxH / viewport1.height);
+          const viewport = page.getViewport({ scale: Math.max(scale, 0.1) });
+
+          const ctx = canvas.getContext("2d", { alpha: false });
+
+          canvas.width  = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+
+          renderTask = page.render({ canvasContext: ctx, viewport });
+
           await renderTask.promise;
+          setButtons();
+
         }catch(e){
-          // ignore cancel
-          if(e && String(e.name).toLowerCase().includes("cancel")) return;
+          // ignore cancellation errors
+          const name = (e && e.name) ? String(e.name).toLowerCase() : "";
+          if(name.includes("cancel")) return;
+
           showError(String(e));
         }
-        setButtons();
       }
 
       async function loadPdf(){
@@ -371,16 +374,24 @@
         }
 
         try{
-          const loadingTask = pdfjsLib.getDocument({ url: pdfUrl, withCredentials: false });
+          const loadingTask = pdfjsLib.getDocument({
+            url: pdfUrl,
+            withCredentials: false
+          });
+
           pdfDoc = await loadingTask.promise;
           pageNum = 1;
           setButtons();
           await renderPage(pageNum);
+
         }catch(e){
           showError("Cannot load PDF: " + pdfUrl + " | " + String(e));
         }
       }
 
+      // ---------------------------
+      // Controls
+      // ---------------------------
       prevBtn.addEventListener("click", async ()=>{
         if(!pdfDoc || pageNum <= 1) return;
         pageNum--;
@@ -393,7 +404,14 @@
         await renderPage(pageNum);
       });
 
-      // re-render on resize to keep “no scroll” fit
+      // keyboard page turn (optional but useful)
+      window.addEventListener("keydown", (e)=>{
+        if(!pdfDoc) return;
+        if(e.key === "ArrowLeft"){ prevBtn.click(); }
+        if(e.key === "ArrowRight"){ nextBtn.click(); }
+      });
+
+      // re-render on resize (keeps fit-to-stage)
       let resizeTimer = null;
       window.addEventListener("resize", ()=>{
         if(!pdfDoc) return;
