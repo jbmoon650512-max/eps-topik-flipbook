@@ -5,341 +5,150 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>PDF Page-Turn Viewer</title>
 
-  <!-- PDF.js (CDN) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js"></script>
+  <!-- PDF.js 안정판 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
-    :root {
-      --bg: #0b1220;
-      --panel: rgba(255,255,255,.08);
-      --panel2: rgba(255,255,255,.12);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.65);
-      --btn: rgba(255,255,255,.10);
-      --btnHover: rgba(255,255,255,.18);
-      --border: rgba(255,255,255,.14);
-    }
-
     html, body {
       height: 100%;
       margin: 0;
-      overflow: hidden; /* NO SCROLL */
-      background: radial-gradient(1100px 700px at 50% 35%, rgba(80,120,255,.18), transparent 60%),
-                  var(--bg);
+      overflow: hidden;
+      background: #0b1220;
+      color: #fff;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
     }
 
     .app {
       height: 100%;
       display: grid;
-      grid-template-rows: 64px 1fr 44px;
+      grid-template-rows: 60px 1fr 36px;
     }
 
-    /* Top bar */
-    .topbar {
+    .top {
       display: grid;
-      grid-template-columns: 140px 1fr 140px;
+      grid-template-columns: 120px 1fr 120px;
       align-items: center;
-      gap: 12px;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--border);
-      background: linear-gradient(to bottom, rgba(0,0,0,.25), rgba(0,0,0,0));
-      backdrop-filter: blur(8px);
+      padding: 10px;
+      border-bottom: 1px solid rgba(255,255,255,.15);
     }
 
     .btn {
-      height: 40px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
       border-radius: 999px;
-      border: 1px solid var(--border);
-      background: var(--btn);
-      color: var(--text);
-      font-weight: 600;
-      letter-spacing: .2px;
+      height: 36px;
       cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      user-select: none;
+      font-weight: 600;
     }
-    .btn:hover { background: var(--btnHover); }
-    .btn:disabled {
-      opacity: .45;
-      cursor: not-allowed;
-    }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-    .centerInfo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
+    .center {
+      text-align: center;
       font-weight: 700;
-      color: var(--muted);
+      opacity: .8;
     }
 
-    /* Viewer area */
     .stage {
       display: grid;
       place-items: center;
-      padding: 14px;
       overflow: hidden;
     }
 
     .paper {
-      width: min(1100px, calc(100vw - 28px));
-      height: min(620px, calc(100vh - 64px - 44px - 28px));
+      width: min(1100px, 100%);
+      height: min(620px, 100%);
       background: rgba(255,255,255,.06);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 18px 70px rgba(0,0,0,.45);
-      overflow: hidden;
+      border-radius: 14px;
       display: grid;
       place-items: center;
-      position: relative;
     }
 
     canvas {
-      display: block;
       max-width: 100%;
       max-height: 100%;
+      display: block;
     }
 
-    .loading {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      place-items: center;
-      background: rgba(0,0,0,.25);
-      color: var(--muted);
-      font-weight: 700;
-      letter-spacing: .3px;
-    }
-
-    /* Bottom badge */
-    .badge {
-      display: grid;
-      place-items: center;
-      color: var(--muted);
+    .footer {
+      text-align: center;
       font-size: 12px;
-      border-top: 1px solid var(--border);
-      background: rgba(0,0,0,.12);
-      user-select: none;
-    }
-
-    .error {
-      padding: 16px;
-      max-width: 900px;
-      margin: 0 auto;
-      color: #fff;
-      line-height: 1.6;
-    }
-
-    .hint code {
-      background: rgba(255,255,255,.10);
-      padding: 2px 6px;
-      border-radius: 6px;
-      border: 1px solid rgba(255,255,255,.12);
+      opacity: .6;
+      border-top: 1px solid rgba(255,255,255,.15);
+      line-height: 36px;
     }
   </style>
 </head>
-
 <body>
-  <div class="app" id="app">
-    <div class="topbar">
-      <button class="btn" id="prevBtn">◀ Prev</button>
-
-      <div class="centerInfo">
-        <span id="pageNow">-</span>
-        <span>/</span>
-        <span id="pageTotal">-</span>
-      </div>
-
-      <button class="btn" id="nextBtn">Next ▶</button>
+  <div class="app">
+    <div class="top">
+      <button class="btn" id="prev">◀ Prev</button>
+      <div class="center"><span id="now">-</span> / <span id="total">-</span></div>
+      <button class="btn" id="next">Next ▶</button>
     </div>
 
     <div class="stage">
-      <div class="paper" id="paper">
-        <canvas id="canvas"></canvas>
-        <div class="loading" id="loading">Loading…</div>
+      <div class="paper">
+        <canvas id="pdf"></canvas>
       </div>
     </div>
 
-    <div class="badge">Page-Turn Mode (No Scroll) · EPS-TOPIK</div>
+    <div class="footer">Page-Turn Mode · No Scroll</div>
   </div>
 
   <script>
-    // ---- PDF.js worker (IMPORTANT) ----
     pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js";
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
     const params = new URLSearchParams(location.search);
     let file = params.get("file") || "";
 
-    // Block cross-origin (stability)
     if (file.startsWith("http")) {
       document.body.innerHTML =
-        "<div class='error'>" +
-          "<h2>Blocked: Cross-origin PDF URL</h2>" +
-          "<p class='hint'>Use a relative path like <code>pdf/eps/u01/ph.pdf</code></p>" +
-        "</div>";
+        "<div style='padding:24px'>Use relative path only.</div>";
       throw new Error("Cross-origin blocked");
     }
     file = file.replace(/^\/+/, "");
 
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d", { alpha: false });
-
-    const loadingEl = document.getElementById("loading");
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const pageNowEl = document.getElementById("pageNow");
-    const pageTotalEl = document.getElementById("pageTotal");
-    const paperEl = document.getElementById("paper");
-
+    const canvas = document.getElementById("pdf");
+    const ctx = canvas.getContext("2d");
     let pdfDoc = null;
     let pageNum = 1;
-    let rendering = false;
-    let pendingPage = null;
 
-    function setLoading(on, text) {
-      loadingEl.style.display = on ? "grid" : "none";
-      if (text) loadingEl.textContent = text;
+    async function render() {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1 });
+      const scale = Math.min(
+        canvas.parentElement.clientWidth / viewport.width,
+        canvas.parentElement.clientHeight / viewport.height
+      );
+      const vp = page.getViewport({ scale });
+
+      canvas.width = vp.width;
+      canvas.height = vp.height;
+
+      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+
+      document.getElementById("now").textContent = pageNum;
+      document.getElementById("total").textContent = pdfDoc.numPages;
     }
 
-    function clamp(n, min, max) {
-      return Math.max(min, Math.min(max, n));
-    }
-
-    function updateButtons() {
-      prevBtn.disabled = !pdfDoc || pageNum <= 1 || rendering;
-      nextBtn.disabled = !pdfDoc || pageNum >= pdfDoc.numPages || rendering;
-      pageNowEl.textContent = pdfDoc ? String(pageNum) : "-";
-      pageTotalEl.textContent = pdfDoc ? String(pdfDoc.numPages) : "-";
-    }
-
-    function getScale(viewport) {
-      // Fit to container (paper)
-      const pw = paperEl.clientWidth;
-      const ph = paperEl.clientHeight;
-      const scaleX = pw / viewport.width;
-      const scaleY = ph / viewport.height;
-      return Math.min(scaleX, scaleY);
-    }
-
-    async function renderPage(num) {
-      if (!pdfDoc) return;
-      rendering = true;
-      updateButtons();
-      setLoading(true, "Rendering…");
-
-      const page = await pdfDoc.getPage(num);
-      const viewport0 = page.getViewport({ scale: 1 });
-
-      const scale = getScale(viewport0);
-      const viewport = page.getViewport({ scale });
-
-      // High-DPI support
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      canvas.width = Math.floor(viewport.width * dpr);
-      canvas.height = Math.floor(viewport.height * dpr);
-      canvas.style.width = Math.floor(viewport.width) + "px";
-      canvas.style.height = Math.floor(viewport.height) + "px";
-
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.imageSmoothingEnabled = true;
-
-      const renderTask = page.render({
-        canvasContext: ctx,
-        viewport: viewport
-      });
-
-      await renderTask.promise;
-
-      rendering = false;
-      setLoading(false);
-      updateButtons();
-
-      if (pendingPage !== null) {
-        const p = pendingPage;
-        pendingPage = null;
-        queueRender(p);
-      }
-    }
-
-    function queueRender(num) {
-      num = clamp(num, 1, pdfDoc.numPages);
-      if (rendering) {
-        pendingPage = num;
-        return;
-      }
-      pageNum = num;
-      renderPage(pageNum);
-    }
-
-    function next() {
-      if (!pdfDoc) return;
-      if (pageNum >= pdfDoc.numPages) return;
-      queueRender(pageNum + 1);
-    }
-
-    function prev() {
-      if (!pdfDoc) return;
-      if (pageNum <= 1) return;
-      queueRender(pageNum - 1);
-    }
-
-    // Buttons
-    prevBtn.addEventListener("click", prev);
-    nextBtn.addEventListener("click", next);
-
-    // Keyboard page-turn
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") next();
-      if (e.key === "ArrowLeft"  || e.key === "PageUp") prev();
-    }, { passive: true });
-
-    // Resize re-render (keeps fit)
-    let resizeTimer = null;
-    window.addEventListener("resize", () => {
-      if (!pdfDoc) return;
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => queueRender(pageNum), 120);
+    pdfjsLib.getDocument(file).promise.then(pdf => {
+      pdfDoc = pdf;
+      render();
     });
 
-    // Boot
-    (async function init() {
-      if (!file) {
-        document.body.innerHTML =
-          "<div class='error'>" +
-            "<h2>Missing file param</h2>" +
-            "<p class='hint'>Use: <code>viewer.html?file=pdf/eps/u01/ph.pdf</code></p>" +
-          "</div>";
-        return;
-      }
+    document.getElementById("prev").onclick = () => {
+      if (pageNum > 1) { pageNum--; render(); }
+    };
+    document.getElementById("next").onclick = () => {
+      if (pageNum < pdfDoc.numPages) { pageNum++; render(); }
+    };
 
-      try {
-        setLoading(true, "Loading PDF…");
-        // IMPORTANT: same-origin relative path
-        const loadingTask = pdfjsLib.getDocument({
-          url: file,
-          withCredentials: false
-        });
-
-        pdfDoc = await loadingTask.promise;
-        pageNum = 1;
-        updateButtons();
-        await renderPage(pageNum);
-      } catch (err) {
-        console.error(err);
-        document.body.innerHTML =
-          "<div class='error'>" +
-            "<h2>PDF load/render failed</h2>" +
-            "<p class='hint'>Try relative path: <code>pdf/eps/u01/ph.pdf</code></p>" +
-            "<p class='hint'>Current: <code>" + (file || "(empty)") + "</code></p>" +
-          "</div>";
-      }
-    })();
+    window.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight") document.getElementById("next").click();
+      if (e.key === "ArrowLeft") document.getElementById("prev").click();
+    });
   </script>
 </body>
 </html>
