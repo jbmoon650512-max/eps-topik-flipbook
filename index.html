@@ -4,185 +4,407 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>EPS Flipbook Viewer</title>
+
   <style>
-    html,body{height:100%;margin:0;background:#0b1220;font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;}
-    .wrap{height:100%;display:flex;flex-direction:column;}
-    .topbar{
-      height:84px;flex:0 0 auto;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:0 18px;color:#e2e8f0;
-      background:linear-gradient(180deg, rgba(15,23,42,.92), rgba(11,18,32,.92));
-      border-bottom:1px solid rgba(148,163,184,.18);
-      box-sizing:border-box;
+    :root{
+      --bg:#0b1220;
+      --panel:#0f172a;
+      --panel2:#111827;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --btn:#1f2937;
+      --btn2:#111827;
+      --border:rgba(255,255,255,.10);
     }
-    .brand{font-weight:900;letter-spacing:.2px;}
-    .usage{font-size:13px;color:#94a3b8;font-weight:800;}
-    .usage code{color:#e2e8f0;background:rgba(255,255,255,.06);padding:2px 6px;border-radius:8px;}
-    .stage{flex:1 1 auto;display:flex;align-items:center;justify-content:center;min-height:0;}
-    .frame{
-      width:min(1200px,96vw);
-      height:min(680px, calc(100vh - 110px));
-      background:#0f172a;
-      border-radius:18px;
-      box-shadow:0 18px 40px rgba(0,0,0,.35);
+
+    /* ✅ absolutely no page scroll */
+    html, body{
+      height:100%;
+      margin:0;
+      background:var(--bg);
       overflow:hidden;
-      border:1px solid rgba(148,163,184,.16);
+    }
+
+    /* ✅ iframe 내부 스크롤바도 제거(브라우저별) */
+    *{
+      box-sizing:border-box;
+      -ms-overflow-style:none;     /* IE/Edge legacy */
+      scrollbar-width:none;        /* Firefox */
+    }
+    *::-webkit-scrollbar{ width:0; height:0; } /* Chrome/Safari */
+
+    .wrap{
+      height:100%;
       display:flex;
       align-items:center;
       justify-content:center;
-      color:#94a3b8;
-      position:relative;
+      padding:16px;
     }
-    iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0f172a;}
-    .hint{position:absolute;left:18px;bottom:14px;font-size:12px;font-weight:800;color:#94a3b8;}
-    .err{padding:18px;max-width:900px;line-height:1.5}
-    .err b{color:#e2e8f0}
+
+    .viewer{
+      width:min(1280px, 100%);
+      height:min(720px, 100%);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 14px 40px rgba(0,0,0,.35);
+      display:flex;
+      flex-direction:column;
+    }
+
+    .topbar{
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      background:rgba(255,255,255,.03);
+      border-bottom:1px solid var(--border);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      user-select:none;
+    }
+
+    .brand{
+      font-weight:900;
+      font-size:14px;
+      letter-spacing:.2px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      min-width:190px;
+    }
+    .brand small{
+      color:var(--muted);
+      font-weight:800;
+      font-size:12px;
+    }
+
+    .ctrl{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .btn{
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.15s;
+      line-height:1;
+      min-width:110px;
+      text-align:center;
+    }
+    .btn:hover{ transform:translateY(-1px); }
+    .btn:disabled{ opacity:.35; cursor:not-allowed; transform:none; }
+
+    .page{
+      font-weight:900;
+      color:var(--text);
+      background:rgba(0,0,0,.20);
+      border:1px solid var(--border);
+      padding:10px 14px;
+      border-radius:999px;
+      min-width:110px;
+      text-align:center;
+    }
+
+    .stage{
+      flex:1;
+      background:linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.45));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden; /* ✅ stage도 scroll 금지 */
+    }
+
+    .paper{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+
+    canvas{
+      max-width:100%;
+      max-height:100%;
+      border-radius:14px;
+      background:#0a0f1c;
+      box-shadow:0 16px 44px rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .hint{
+      position:absolute;
+      left:0; right:0; bottom:10px;
+      text-align:center;
+      color:var(--muted);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      font-size:12px;
+      font-weight:800;
+      pointer-events:none;
+    }
+
+    .error{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      text-align:center;
+      color:#fecaca;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      font-weight:900;
+      background:rgba(0,0,0,.50);
+    }
+    .error.show{ display:flex; }
+
+    .error .box{
+      max-width:760px;
+      background:rgba(15,23,42,.85);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:16px 18px;
+      box-shadow:0 14px 44px rgba(0,0,0,.45);
+    }
+    .error .box p{
+      margin:0;
+      color:#e5e7eb;
+      font-weight:800;
+      font-size:13px;
+      line-height:1.5;
+      word-break:break-word;
+    }
+    .error .box p strong{
+      color:#fff;
+      font-weight:1000;
+    }
+
+    @media (max-width:720px){
+      .viewer{ height:min(680px, 100%); }
+      .brand{ min-width:auto; }
+      .btn{ min-width:92px; padding:10px 12px; }
+      .page{ min-width:92px; }
+    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div class="brand">EPS Flipbook Viewer</div>
-      <div class="usage">
-        Usage:
-        <code>index.html?file=pdf/eps/u01/ph.pdf</code>
-        or
-        <code>index.html?file=https://.../pdf/eps/u01/ph.pdf</code>
-      </div>
-    </div>
+    <div class="viewer" role="application" aria-label="EPS Flipbook Viewer">
+      <div class="topbar">
+        <div class="brand">
+          EPS Flipbook Viewer
+          <small id="fileName"></small>
+        </div>
 
-    <div class="stage">
-      <div class="frame" id="frame">
+        <div class="ctrl">
+          <button class="btn" id="prevBtn">◀ Prev</button>
+          <div class="page" id="pageInd">- / -</div>
+          <button class="btn" id="nextBtn">Next ▶</button>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="paper">
+          <canvas id="canvas"></canvas>
+        </div>
         <div class="hint">Page-Turn Mode · No Scroll</div>
+
+        <div class="error" id="err">
+          <div class="box">
+            <p><strong>PDF Load Failed.</strong></p>
+            <p id="errMsg"></p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- ✅ IMPORTANT: pdf.min.js / pdf.worker.min.js는 index.html과 같은 폴더(루트)에 두세요 -->
+  <script src="pdf.min.js"></script>
   <script>
-    /**
-     * ============================================================
-     * 핵심: file 파라미터 절대URL/상대경로 모두 안전 처리
-     * - 절대URL이면 그대로 사용
-     * - 상대경로면 "repo 루트(…/eps-topik-flipbook/)"를 정확히 1번만 붙임
-     * - 이미 eps-topik-flipbook/ 로 시작하면 중복 붙임 방지
-     * ============================================================
-     */
+    (function(){
+      const $ = (id)=>document.getElementById(id);
 
-    function getRepoRoot() {
-      // GitHub Pages 프로젝트 사이트 기준:
-      // location.pathname: /eps-topik-flipbook/index.html
-      // repoRoot: https://<user>.github.io/eps-topik-flipbook/
-      const url = new URL(window.location.href);
-      const path = url.pathname;
+      const prevBtn = $("prevBtn");
+      const nextBtn = $("nextBtn");
+      const pageInd = $("pageInd");
+      const fileName = $("fileName");
+      const canvas = $("canvas");
+      const err = $("err");
+      const errMsg = $("errMsg");
 
-      // index.html이 루트에 있다는 전제 하에, /index.html 제거 후 trailing slash 보장
-      const rootPath = path.replace(/\/index\.html.*$/i, "/");
-      return url.origin + rootPath; // e.g. https://jbmoon...github.io/eps-topik-flipbook/
-    }
-
-    function isAbsoluteHttpUrl(s) {
-      return /^https?:\/\//i.test(s);
-    }
-
-    function normalizeFileParam(raw) {
-      if (!raw) return null;
-
-      let f = raw.trim();
-
-      // 차단: 위험 스킴
-      if (/^(javascript:|data:|file:)/i.test(f)) return null;
-
-      // 이미 절대 URL이면 그대로
-      if (isAbsoluteHttpUrl(f)) return f;
-
-      // protocol-relative (//example.com/...)도 차단/정규화하지 않음
-      if (/^\/\//.test(f)) return null;
-
-      const repoRoot = getRepoRoot(); // .../eps-topik-flipbook/
-      const origin = window.location.origin;
-
-      // 절대 경로(/pdf/...)면 origin 붙임
-      if (f.startsWith("/")) {
-        return origin + f;
+      // ---------------------------
+      // 1) Resolve file param safely
+      // ---------------------------
+      function getParam(name){
+        const u = new URL(location.href);
+        return u.searchParams.get(name) || "";
       }
 
-      // 중복 방지:
-      // - "eps-topik-flipbook/..." 로 시작하면 repoRoot 뒤에 또 붙지 않게 제거
-      // - 또는 "./" 제거
-      f = f.replace(/^\.\//, "");
-
-      const repoFolder = repoRoot.replace(origin + "/", ""); // eps-topik-flipbook/
-      if (f.startsWith(repoFolder)) {
-        f = f.slice(repoFolder.length); // pdf/eps/u01/ph.pdf 로 만듦
+      // repo root: https://{user}.github.io/{repo}/
+      function repoRootUrl(){
+        const parts = location.pathname.split("/").filter(Boolean);
+        // e.g. ["eps-topik-flipbook","index.html"]
+        const repo = parts.length ? parts[0] : "";
+        return location.origin + "/" + repo + "/";
       }
 
-      return repoRoot + f; // repoRoot + pdf/eps/u01/ph.pdf
-    }
+      function resolveFileUrl(file){
+        if(!file) return "";
+        const trimmed = file.trim();
 
-    function boot() {
-      const params = new URLSearchParams(window.location.search);
-      const raw = params.get("file");
-      const pdfAbs = normalizeFileParam(raw);
+        // absolute URL
+        if(/^https?:\/\//i.test(trimmed)) return trimmed;
 
-      const frame = document.getElementById("frame");
+        // root-relative "/pdf/..."  -> make it absolute to origin
+        if(trimmed.startsWith("/")) return location.origin + trimmed;
 
-      if (!pdfAbs) {
-        frame.innerHTML = `
-          <div class="err">
-            <b>Missing or invalid "file" parameter.</b><br/><br/>
-            Example 1 (relative): <code>index.html?file=pdf/eps/u01/ph.pdf</code><br/>
-            Example 2 (absolute): <code>index.html?file=https://.../pdf/eps/u01/ph.pdf</code><br/><br/>
-            Current repoRoot: <code>${getRepoRoot()}</code>
-          </div>
-        `;
+        // normal relative "pdf/eps/u01/ph.pdf" -> resolve against repo root
+        return new URL(trimmed, repoRootUrl()).toString();
+      }
+
+      const fileParam = getParam("file") || getParam("f") || "";
+      const pdfUrl = resolveFileUrl(fileParam);
+
+      // show file name
+      try{
+        fileName.textContent = fileParam ? ("· " + decodeURIComponent(fileParam).split("/").pop()) : "";
+      }catch(e){
+        fileName.textContent = fileParam ? ("· " + fileParam.split("/").pop()) : "";
+      }
+
+      // ---------------------------
+      // 2) PDF.js setup
+      // ---------------------------
+      if(typeof window.pdfjsLib === "undefined"){
+        err.classList.add("show");
+        errMsg.textContent = "pdfjsLib is not found. Put pdf.min.js next to index.html.";
         return;
       }
 
-      // 여기서부터는 당신의 “페이지 넘김 뷰어” 엔진을 호출하면 됨.
-      // 기존 구현이 iframe/pdf.js/flipbook 라이브러리 어떤 형태든 상관없음.
-      // 가장 안전한 방식: 기존 flipbook 페이지(예: viewer.html)에 pdfAbs를 넘기기.
-      //
-      // 만약 당신이 이미 index.html 내부에서 flipbook을 직접 렌더링 중이라면,
-      // "pdfAbs"를 기존 로더에 그대로 전달하면 된다.
+      // worker (same folder)
+      try{
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
+      }catch(e){}
 
-      // [A] 당신이 별도 viewer.html을 쓰는 경우(권장)
-      //    viewer.html?pdf=<ABS_URL> 패턴으로 유지
-      //
-      // [B] index.html이 직접 렌더링하는 경우
-      //    initFlipbook(pdfAbs) 처럼 연결하면 된다.
+      let pdfDoc = null;
+      let pageNum = 1;
+      let renderTask = null;
 
-      // 여기서는 “최소 변경”을 위해, index.html이 viewer 역할을 한다고 가정하고
-      // 별도 viewer.html이 없다면, 아래 iframe 방식을 그대로 사용해도 됩니다.
-      //
-      // 단, 당신이 기존에 flipbook 엔진을 index.html에 이미 붙여놨다면
-      // 아래 iframe 부분을 지우고, 기존 init 로더에 pdfAbs만 꽂으세요.
+      function showError(message){
+        err.classList.add("show");
+        errMsg.textContent = message || "Unknown error.";
+      }
 
-      const ifr = document.createElement("iframe");
-      ifr.loading = "lazy";
+      function hideError(){
+        err.classList.remove("show");
+        errMsg.textContent = "";
+      }
 
-      // ✅ 가장 단순: 브라우저 PDF 뷰어로 열기(원하면 기존 flipbook 엔진으로 교체)
-      // ifr.src = pdfAbs;
+      function setButtons(){
+        if(!pdfDoc){
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
+          pageInd.textContent = "- / -";
+          return;
+        }
+        prevBtn.disabled = (pageNum <= 1);
+        nextBtn.disabled = (pageNum >= pdfDoc.numPages);
+        pageInd.textContent = pageNum + " / " + pdfDoc.numPages;
+      }
 
-      // ✅ 권장: 당신이 운영하는 flipbook 엔진이 index.html 내부라면,
-      // 아래처럼 "pdfAbs"를 file=로 다시 주지 말고 그대로 로더에 사용해야 한다.
-      // (현재 단계에선 "pdfAbs를 만들기"가 목적이라 iframe은 임시 표시 역할)
-      ifr.src = pdfAbs;
+      // fit page to available stage size (no scroll)
+      async function renderPage(num){
+        if(!pdfDoc) return;
+        hideError();
 
-      frame.innerHTML = "";
-      frame.appendChild(ifr);
-      const hint = document.createElement("div");
-      hint.className = "hint";
-      hint.textContent = "Page-Turn Mode · No Scroll";
-      frame.appendChild(hint);
+        // cancel prior rendering to prevent race
+        if(renderTask && renderTask.cancel){
+          try{ renderTask.cancel(); }catch(e){}
+        }
 
-      // 디버그(필요시)
-      // console.log("[Viewer] repoRoot:", getRepoRoot());
-      // console.log("[Viewer] raw:", raw);
-      // console.log("[Viewer] pdfAbs:", pdfAbs);
-    }
+        const page = await pdfDoc.getPage(num);
 
-    boot();
+        // compute scale
+        const viewport1 = page.getViewport({ scale: 1 });
+        const container = canvas.parentElement; // .paper
+        const maxW = container.clientWidth - 32;
+        const maxH = container.clientHeight - 32;
+
+        const scale = Math.min(maxW / viewport1.width, maxH / viewport1.height);
+        const viewport = page.getViewport({ scale: Math.max(scale, 0.1) });
+
+        const ctx = canvas.getContext("2d", { alpha: false });
+
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+
+        const renderContext = { canvasContext: ctx, viewport };
+        renderTask = page.render(renderContext);
+
+        try{
+          await renderTask.promise;
+        }catch(e){
+          // ignore cancel
+          if(e && String(e.name).toLowerCase().includes("cancel")) return;
+          showError(String(e));
+        }
+        setButtons();
+      }
+
+      async function loadPdf(){
+        if(!pdfUrl){
+          showError("Missing file parameter. Example: index.html?file=pdf/eps/u01/ph.pdf");
+          return;
+        }
+
+        try{
+          const loadingTask = pdfjsLib.getDocument({ url: pdfUrl, withCredentials: false });
+          pdfDoc = await loadingTask.promise;
+          pageNum = 1;
+          setButtons();
+          await renderPage(pageNum);
+        }catch(e){
+          showError("Cannot load PDF: " + pdfUrl + " | " + String(e));
+        }
+      }
+
+      prevBtn.addEventListener("click", async ()=>{
+        if(!pdfDoc || pageNum <= 1) return;
+        pageNum--;
+        await renderPage(pageNum);
+      });
+
+      nextBtn.addEventListener("click", async ()=>{
+        if(!pdfDoc || pageNum >= pdfDoc.numPages) return;
+        pageNum++;
+        await renderPage(pageNum);
+      });
+
+      // re-render on resize to keep “no scroll” fit
+      let resizeTimer = null;
+      window.addEventListener("resize", ()=>{
+        if(!pdfDoc) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(()=>renderPage(pageNum), 120);
+      });
+
+      // init
+      setButtons();
+      loadPdf();
+    })();
   </script>
 </body>
 </html>
