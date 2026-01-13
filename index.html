@@ -1,147 +1,440 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>EPS Flipbook Viewer</title>
 
   <style>
     :root{
-      --bg:#0b1220; --panel:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+      --bg:#0b1220;
+      --panel:rgba(255,255,255,.03);
+      --text:#e5e7eb;
+      --muted:#94a3b8;
       --border:rgba(255,255,255,.10);
+      --shadow:0 14px 40px rgba(0,0,0,.35);
     }
-    html,body{height:100%;margin:0;background:var(--bg);overflow:hidden}
-    *{-ms-overflow-style:none;scrollbar-width:none;box-sizing:border-box}
-    *::-webkit-scrollbar{width:0;height:0}
 
-    .wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
+    /* ✅ no page scroll, always fill parent */
+    html, body{
+      height:100%;
+      margin:0;
+      background:var(--bg);
+      overflow:hidden;
+    }
+
+    /* ✅ hide scrollbars (browser-wide) */
+    *{
+      box-sizing:border-box;
+      -ms-overflow-style:none;     /* IE/Edge legacy */
+      scrollbar-width:none;        /* Firefox */
+      touch-action:manipulation;
+    }
+    *::-webkit-scrollbar{ width:0; height:0; } /* Chrome/Safari */
+
+    /* ✅ wrapper fills viewport (or iframe) */
+    .wrap{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:0; /* 4-box standard: no outer padding */
+    }
+
+    /* ✅ viewer: fill parent, but keep reasonable max for direct browser viewing */
     .viewer{
-      width:min(1280px,100%);height:min(720px,100%);
-      background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));
-      border:1px solid var(--border);border-radius:16px;overflow:hidden;
-      box-shadow:0 14px 40px rgba(0,0,0,.35);display:flex;flex-direction:column
+      width:100%;
+      height:100%;
+      max-width:1600px;  /* desktop guardrail */
+      max-height:900px;  /* desktop guardrail (16:9) */
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--border);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow:var(--shadow);
+      display:flex;
+      flex-direction:column;
     }
+
     .topbar{
-      height:56px;display:flex;align-items:center;justify-content:space-between;gap:10px;
-      padding:10px 12px;background:rgba(255,255,255,.03);
-      border-bottom:1px solid var(--border);color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif
+      height:56px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      background:var(--panel);
+      border-bottom:1px solid var(--border);
+      color:var(--text);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      user-select:none;
     }
-    .brand{font-weight:900;font-size:14px;display:flex;gap:10px;align-items:center}
-    .brand small{color:var(--muted);font-weight:800;font-size:12px}
-    .ctrl{display:flex;gap:10px}
+
+    .brand{
+      font-weight:900;
+      font-size:14px;
+      letter-spacing:.2px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      min-width:0;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+    .brand small{
+      color:var(--muted);
+      font-weight:800;
+      font-size:12px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .ctrl{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-shrink:0;
+    }
+
     .btn{
-      background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.06));
-      border:1px solid var(--border);color:var(--text);
-      padding:10px 14px;border-radius:999px;font-weight:900;cursor:pointer
+      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border:1px solid var(--border);
+      color:var(--text);
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:900;
+      cursor:pointer;
+      transition:.12s;
+      line-height:1;
+      min-width:110px;
+      text-align:center;
     }
-    .btn:disabled{opacity:.35;cursor:not-allowed}
+    .btn:hover{ transform:translateY(-1px); }
+    .btn:disabled{ opacity:.35; cursor:not-allowed; transform:none; }
+
     .page{
-      font-weight:900;color:var(--text);background:rgba(0,0,0,.20);
-      border:1px solid var(--border);padding:10px 14px;border-radius:999px
+      font-weight:900;
+      color:var(--text);
+      background:rgba(0,0,0,.20);
+      border:1px solid var(--border);
+      padding:10px 14px;
+      border-radius:999px;
+      min-width:110px;
+      text-align:center;
     }
+
     .stage{
-      flex:1;background:linear-gradient(180deg,rgba(0,0,0,.20),rgba(0,0,0,.45));
-      display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden
+      flex:1;
+      background:linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.45));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden; /* ✅ no scroll */
     }
-    .paper{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:16px}
+
+    .paper{
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:8px; /* ✅ minimal padding so PDF looks big */
+    }
+
     canvas{
-      max-width:100%;max-height:100%;border-radius:14px;background:#0a0f1c;
-      box-shadow:0 16px 44px rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.08)
+      max-width:100%;
+      max-height:100%;
+      border-radius:14px;
+      background:#0a0f1c;
+      box-shadow:0 16px 44px rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.08);
     }
-    .hint{position:absolute;left:0;right:0;bottom:10px;text-align:center;
-      color:var(--muted);font-size:12px;font-weight:800}
-    .error{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
-      background:rgba(0,0,0,.5)}
-    .error.show{display:flex}
-    .error .box{background:rgba(15,23,42,.85);border:1px solid rgba(255,255,255,.12);
-      border-radius:16px;padding:16px 18px;color:#e5e7eb;font-weight:800}
+
+    .hint{
+      position:absolute;
+      left:0; right:0; bottom:10px;
+      text-align:center;
+      color:var(--muted);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      font-size:12px;
+      font-weight:800;
+      pointer-events:none;
+    }
+
+    .error{
+      position:absolute;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      text-align:center;
+      color:#fecaca;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      font-weight:900;
+      background:rgba(0,0,0,.55);
+    }
+    .error.show{ display:flex; }
+
+    .error .box{
+      max-width:760px;
+      background:rgba(15,23,42,.88);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:16px 18px;
+      box-shadow:0 14px 44px rgba(0,0,0,.45);
+    }
+    .error .box p{
+      margin:0;
+      color:#e5e7eb;
+      font-weight:800;
+      font-size:13px;
+      line-height:1.5;
+      word-break:break-word;
+    }
+    .error .box p strong{
+      color:#fff;
+      font-weight:1000;
+    }
+
+    /* ✅ small screens */
+    @media (max-width:720px){
+      .topbar{ height:50px; padding:8px 10px; }
+      .btn{ min-width:88px; padding:9px 11px; }
+      .page{ min-width:88px; padding:9px 11px; }
+      .hint{ font-size:11px; bottom:8px; }
+      .paper{ padding:6px; }
+    }
   </style>
 </head>
 
 <body>
-<div class="wrap">
-  <div class="viewer">
-    <div class="topbar">
-      <div class="brand">EPS Flipbook Viewer <small id="fileName"></small></div>
-      <div class="ctrl">
-        <button class="btn" id="prevBtn">◀ Prev</button>
-        <div class="page" id="pageInd">- / -</div>
-        <button class="btn" id="nextBtn">Next ▶</button>
+  <div class="wrap">
+    <div class="viewer" role="application" aria-label="EPS Flipbook Viewer">
+      <div class="topbar">
+        <div class="brand">
+          EPS Flipbook Viewer
+          <small id="fileName"></small>
+        </div>
+
+        <div class="ctrl">
+          <button class="btn" id="prevBtn" type="button">◀ Prev</button>
+          <div class="page" id="pageInd">- / -</div>
+          <button class="btn" id="nextBtn" type="button">Next ▶</button>
+        </div>
+      </div>
+
+      <div class="stage" id="stage">
+        <div class="paper">
+          <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="hint">Page-Turn Mode · No Scroll</div>
+
+        <div class="error" id="err">
+          <div class="box">
+            <p><strong>PDF Load Failed.</strong></p>
+            <p id="errMsg"></p>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="stage">
-      <div class="paper"><canvas id="canvas"></canvas></div>
-      <div class="hint">Page-Turn Mode · No Scroll</div>
-      <div class="error" id="err"><div class="box" id="errMsg"></div></div>
-    </div>
   </div>
-</div>
 
-<script type="module">
-  import * as pdfjsLib from "./pdf.min.js";
+  <!-- ✅ ESM PDF.js (your current setup: pdf.min.js / pdf.worker.min.js) -->
+  <script type="module">
+    import * as pdfjsLib from "./pdf.min.js";
 
-  const $=id=>document.getElementById(id);
-  const prev=$("prevBtn"), next=$("nextBtn"), pageInd=$("pageInd"),
-        fileName=$("fileName"), canvas=$("canvas"),
-        err=$("err"), errMsg=$("errMsg");
+    const $ = (id)=>document.getElementById(id);
 
-  const getParam=n=>new URL(location.href).searchParams.get(n)||"";
-  const repoRoot=()=>location.origin+"/"+location.pathname.split("/").filter(Boolean)[0]+"/";
-  const resolve=f=>{
-    if(!f) return "";
-    if(/^https?:\/\//i.test(f)) return f;
-    if(f.startsWith("/")) return location.origin+f;
-    return new URL(f, repoRoot()).toString();
-  };
+    const prevBtn  = $("prevBtn");
+    const nextBtn  = $("nextBtn");
+    const pageInd  = $("pageInd");
+    const fileName = $("fileName");
+    const canvas   = $("canvas");
+    const stage    = $("stage");
+    const err      = $("err");
+    const errMsg   = $("errMsg");
 
-  const fileParam=getParam("file")||getParam("f");
-  const pdfUrl=resolve(fileParam);
-  fileName.textContent=fileParam?("· "+fileParam.split("/").pop()):"";
+    function showError(message){
+      err.classList.add("show");
+      errMsg.textContent = message || "Unknown error.";
+    }
+    function hideError(){
+      err.classList.remove("show");
+      errMsg.textContent = "";
+    }
 
-  try{
-    pdfjsLib.GlobalWorkerOptions.workerPort =
-      new Worker("./pdf.worker.min.js",{type:"module"});
-  }catch(e){ console.warn(e); }
+    function getParam(name){
+      const u = new URL(location.href);
+      return (u.searchParams.get(name) || "").trim();
+    }
 
-  let pdfDoc=null, pageNum=1, renderTask=null;
+    // repo root: https://{user}.github.io/{repo}/
+    function repoRootUrl(){
+      const parts = location.pathname.split("/").filter(Boolean);
+      const repo = parts.length ? parts[0] : "";
+      return location.origin + "/" + repo + "/";
+    }
 
-  const showErr=m=>{err.classList.add("show"); errMsg.textContent=m};
-  const hideErr=()=>{err.classList.remove("show"); errMsg.textContent=""};
+    function resolveFileUrl(file){
+      if(!file) return "";
+      const f = file.trim();
 
-  const setBtns=()=>{
-    if(!pdfDoc){prev.disabled=next.disabled=true; pageInd.textContent="- / -"; return;}
-    prev.disabled=pageNum<=1; next.disabled=pageNum>=pdfDoc.numPages;
-    pageInd.textContent=pageNum+" / "+pdfDoc.numPages;
-  };
+      // absolute URL
+      if(/^https?:\/\//i.test(f)) return f;
 
-  async function renderPage(n){
-    if(!pdfDoc) return; hideErr();
-    if(renderTask?.cancel) try{renderTask.cancel()}catch{}
-    const page=await pdfDoc.getPage(n);
-    const base=page.getViewport({scale:1});
-    const box=canvas.parentElement;
-    const scale=Math.min((box.clientWidth-32)/base.width,(box.clientHeight-32)/base.height);
-    const vp=page.getViewport({scale:Math.max(scale,.1)});
-    const ctx=canvas.getContext("2d",{alpha:false});
-    canvas.width=vp.width|0; canvas.height=vp.height|0;
-    renderTask=page.render({canvasContext:ctx, viewport:vp});
-    await renderTask.promise; setBtns();
-  }
+      // root-relative "/pdf/..." -> absolute to origin
+      if(f.startsWith("/")) return location.origin + f;
 
-  async function load(){
-    if(!pdfUrl) return showErr("Missing ?file=...");
+      // relative "pdf/eps/u01/id.pdf" -> resolve against repo root
+      return new URL(f, repoRootUrl()).toString();
+    }
+
+    const fileParam = getParam("file") || getParam("f") || "";
+    const pdfUrl = resolveFileUrl(fileParam);
+
+    // show file name (safe)
     try{
-      pdfDoc=await pdfjsLib.getDocument({url:pdfUrl}).promise;
-      pageNum=1; setBtns(); await renderPage(pageNum);
-    }catch(e){ showErr(String(e)); }
-  }
+      fileName.textContent = fileParam ? ("· " + decodeURIComponent(fileParam).split("/").pop()) : "";
+    }catch(e){
+      fileName.textContent = fileParam ? ("· " + fileParam.split("/").pop()) : "";
+    }
 
-  prev.onclick=async()=>{ if(pageNum>1){pageNum--; await renderPage(pageNum)} };
-  next.onclick=async()=>{ if(pdfDoc && pageNum<pdfDoc.numPages){pageNum++; await renderPage(pageNum)} };
-  window.onresize=()=>pdfDoc && renderPage(pageNum);
+    // Worker (ESM)
+    try{
+      pdfjsLib.GlobalWorkerOptions.workerPort =
+        new Worker("./pdf.worker.min.js", { type:"module" });
+    }catch(e){
+      // Fallback: keep going; some environments may still render, though slower.
+      console.warn("Worker init failed:", e);
+    }
 
-  setBtns(); load();
-</script>
+    let pdfDoc = null;
+    let pageNum = 1;
+    let renderTask = null;
+
+    function setButtons(){
+      if(!pdfDoc){
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        pageInd.textContent = "- / -";
+        return;
+      }
+      prevBtn.disabled = (pageNum <= 1);
+      nextBtn.disabled = (pageNum >= pdfDoc.numPages);
+      pageInd.textContent = pageNum + " / " + pdfDoc.numPages;
+    }
+
+    // Fit page to stage (no scroll)
+    async function renderPage(num){
+      if(!pdfDoc) return;
+      hideError();
+
+      if(renderTask && typeof renderTask.cancel === "function"){
+        try{ renderTask.cancel(); }catch(e){}
+      }
+
+      try{
+        const page = await pdfDoc.getPage(num);
+
+        const viewport1 = page.getViewport({ scale: 1 });
+
+        // Use stage size (more stable in iframes)
+        const maxW = stage.clientWidth  - 24;  // small breathing room
+        const maxH = stage.clientHeight - 24;
+
+        const scale = Math.min(maxW / viewport1.width, maxH / viewport1.height);
+        const viewport = page.getViewport({ scale: Math.max(scale, 0.1) });
+
+        const ctx = canvas.getContext("2d", { alpha:false });
+
+        canvas.width  = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+
+        renderTask = page.render({ canvasContext: ctx, viewport });
+        await renderTask.promise;
+
+        setButtons();
+      }catch(e){
+        const name = (e && e.name) ? String(e.name).toLowerCase() : "";
+        if(name.includes("cancel")) return;
+        showError(String(e));
+      }
+    }
+
+    async function loadPdf(){
+      if(!pdfUrl){
+        showError("Missing file parameter. Example: ?file=pdf/eps/u01/id.pdf");
+        return;
+      }
+
+      try{
+        const loadingTask = pdfjsLib.getDocument({ url: pdfUrl, withCredentials:false });
+        pdfDoc = await loadingTask.promise;
+        pageNum = 1;
+        setButtons();
+        await renderPage(pageNum);
+      }catch(e){
+        showError("Cannot load PDF: " + pdfUrl + " | " + String(e));
+      }
+    }
+
+    prevBtn.addEventListener("click", async ()=>{
+      if(!pdfDoc || pageNum <= 1) return;
+      pageNum--;
+      await renderPage(pageNum);
+    });
+
+    nextBtn.addEventListener("click", async ()=>{
+      if(!pdfDoc || pageNum >= pdfDoc.numPages) return;
+      pageNum++;
+      await renderPage(pageNum);
+    });
+
+    // Keyboard (PC)
+    window.addEventListener("keydown", (e)=>{
+      if(!pdfDoc) return;
+      if(e.key === "ArrowLeft")  prevBtn.click();
+      if(e.key === "ArrowRight") nextBtn.click();
+    });
+
+    // Swipe (mobile/tablet)
+    let sx = 0, sy = 0, st = 0;
+    stage.addEventListener("pointerdown", (e)=>{
+      sx = e.clientX; sy = e.clientY; st = Date.now();
+    }, { passive:true });
+
+    stage.addEventListener("pointerup", (e)=>{
+      if(!pdfDoc) return;
+
+      const dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      const dt = Date.now() - st;
+
+      // horizontal swipe only
+      if(Math.abs(dx) < 60) return;
+      if(Math.abs(dy) > 80) return;
+      if(dt > 700) return;
+
+      if(dx > 0) prevBtn.click();   // swipe right -> prev
+      else       nextBtn.click();   // swipe left  -> next
+    }, { passive:true });
+
+    // Re-render on resize to keep fit in iframes
+    let resizeTimer = null;
+    window.addEventListener("resize", ()=>{
+      if(!pdfDoc) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(()=>renderPage(pageNum), 120);
+    });
+
+    // init
+    setButtons();
+    loadPdf();
+  </script>
 </body>
 </html>
