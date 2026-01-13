@@ -1,154 +1,41 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ko">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PDF Page-Turn Viewer</title>
-
-  <!-- PDF.js 안정판 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-  <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      overflow: hidden;
-      background: #0b1220;
-      color: #fff;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
-
-    .app {
-      height: 100%;
-      display: grid;
-      grid-template-rows: 60px 1fr 36px;
-    }
-
-    .top {
-      display: grid;
-      grid-template-columns: 120px 1fr 120px;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid rgba(255,255,255,.15);
-    }
-
-    .btn {
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.2);
-      color: #fff;
-      border-radius: 999px;
-      height: 36px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    .btn:disabled { opacity: .4; cursor: not-allowed; }
-
-    .center {
-      text-align: center;
-      font-weight: 700;
-      opacity: .8;
-    }
-
-    .stage {
-      display: grid;
-      place-items: center;
-      overflow: hidden;
-    }
-
-    .paper {
-      width: min(1100px, 100%);
-      height: min(620px, 100%);
-      background: rgba(255,255,255,.06);
-      border-radius: 14px;
-      display: grid;
-      place-items: center;
-    }
-
-    canvas {
-      max-width: 100%;
-      max-height: 100%;
-      display: block;
-    }
-
-    .footer {
-      text-align: center;
-      font-size: 12px;
-      opacity: .6;
-      border-top: 1px solid rgba(255,255,255,.15);
-      line-height: 36px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>EPS-TOPIK Secure Viewer</title>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/pdf.min.js"></script>
+    <script src="js/3dflipbook.min.js"></script>
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #2d3436; }
+        #viewer-container { width: 100vw; height: 100vh; }
+    </style>
 </head>
 <body>
-  <div class="app">
-    <div class="top">
-      <button class="btn" id="prev">◀ Prev</button>
-      <div class="center"><span id="now">-</span> / <span id="total">-</span></div>
-      <button class="btn" id="next">Next ▶</button>
-    </div>
+    <div id="viewer-container"></div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        let file = params.get('file');
 
-    <div class="stage">
-      <div class="paper">
-        <canvas id="pdf"></canvas>
-      </div>
-    </div>
+        if (file) {
+            // 지침 11번 준수: 모든 파일/폴더 경로를 소문자로 변환하여 인식 
+            const cleanPath = file.toLowerCase();
 
-    <div class="footer">Page-Turn Mode · No Scroll</div>
-  </div>
-
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
-    const params = new URLSearchParams(location.search);
-    let file = params.get("file") || "";
-
-    if (file.startsWith("http")) {
-      document.body.innerHTML =
-        "<div style='padding:24px'>Use relative path only.</div>";
-      throw new Error("Cross-origin blocked");
-    }
-    file = file.replace(/^\/+/, "");
-
-    const canvas = document.getElementById("pdf");
-    const ctx = canvas.getContext("2d");
-    let pdfDoc = null;
-    let pageNum = 1;
-
-    async function render() {
-      const page = await pdfDoc.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 1 });
-      const scale = Math.min(
-        canvas.parentElement.clientWidth / viewport.width,
-        canvas.parentElement.clientHeight / viewport.height
-      );
-      const vp = page.getViewport({ scale });
-
-      canvas.width = vp.width;
-      canvas.height = vp.height;
-
-      await page.render({ canvasContext: ctx, viewport: vp }).promise;
-
-      document.getElementById("now").textContent = pageNum;
-      document.getElementById("total").textContent = pdfDoc.numPages;
-    }
-
-    pdfjsLib.getDocument(file).promise.then(pdf => {
-      pdfDoc = pdf;
-      render();
-    });
-
-    document.getElementById("prev").onclick = () => {
-      if (pageNum > 1) { pageNum--; render(); }
-    };
-    document.getElementById("next").onclick = () => {
-      if (pageNum < pdfDoc.numPages) { pageNum++; render(); }
-    };
-
-    window.addEventListener("keydown", e => {
-      if (e.key === "ArrowRight") document.getElementById("next").click();
-      if (e.key === "ArrowLeft") document.getElementById("prev").click();
-    });
-  </script>
+            $('#viewer-container').FlipBook({
+                pdf: cleanPath,
+                template: {
+                    html: 'templates/default-book-view.html',
+                    styles: ['css/short-white-book-view.css'],
+                    links: [{ rel: 'stylesheet', href: 'css/font-awesome.min.css' }]
+                },
+                controlsProps: {
+                    downloadURL: false, // 지침 7번: 다운로드 버튼 제거 
+                    printURL: false     // 인쇄 방지
+                }
+            });
+        } else {
+            document.body.innerHTML = '<h2 style="color:white; text-align:center; margin-top:20%;">파일 경로가 지정되지 않았습니다.</h2>';
+        }
+    </script>
 </body>
 </html>
