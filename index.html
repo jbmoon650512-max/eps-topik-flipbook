@@ -6,112 +6,129 @@
   <title>EPS Flipbook Viewer</title>
   <style>
     :root{
-      --bg1:#071024; --bg2:#0a1633;
-      --card:#0b1220; --card2:#0f1a2e;
-      --line:rgba(255,255,255,.08);
-      --txt:#e5e7eb; --muted:#94a3b8;
-      --btn:#111c33; --btn2:#152449;
-      --accent:#60a5fa;
+      --bg0:#070b14; --bg1:#0b1220; --card:#0d1426;
+      --line:#1f2a44; --text:#e5e7eb; --muted:#94a3b8;
+      --btn:#0f172a; --btn2:#111c33; --accent:#60a5fa;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;
-      background:radial-gradient(1200px 600px at 40% 20%, rgba(96,165,250,.18), transparent 60%),
-                 linear-gradient(180deg,var(--bg1),var(--bg2));
-      color:var(--txt);
-    }
+    html,body{height:100%; margin:0; background:linear-gradient(180deg,var(--bg0),var(--bg1)); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+    /* ✅ No scroll */
+    body{overflow:hidden;}
 
-    /* ✅ 16:9 프레임: WP의 Summary와 같은 방식으로 꽉 차게 */
-    .stage{
-      width:min(1200px, 96vw);
-      margin:24px auto;
-      padding:18px;
+    .wrap{
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px;
+      box-sizing:border-box;
+    }
+    /* ✅ 16:9 크게 (PC 꽉 차게) + 모바일 반응 */
+    .viewer{
+      width:min(1400px, 98vw);
+      height:min(820px, 92vh);
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.08);
       border-radius:18px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--line);
-      box-shadow:0 18px 60px rgba(0,0,0,.35);
+      box-shadow:0 28px 70px rgba(0,0,0,0.55);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
     }
 
     .topbar{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:14px;
-      padding:14px 14px 12px;
-      border-radius:14px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      border:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 14px;
+      background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      gap:10px;
+      flex:0 0 auto;
     }
     .title{
+      display:flex; align-items:center; gap:10px;
+      min-width:0;
       font-weight:900;
       letter-spacing:.2px;
-      font-size:14px;
-      color:#fff;
-      display:flex; gap:10px; align-items:center;
     }
     .title small{
       color:var(--muted);
       font-weight:800;
-      opacity:.95;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:46ch;
     }
-
-    .ctrl{
-      display:flex; align-items:center; gap:10px;
-      user-select:none;
+    .controls{
+      display:flex; align-items:center; gap:10px; flex:0 0 auto;
     }
     .btn{
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, var(--btn2), var(--btn));
-      color:#fff;
-      padding:10px 14px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      color:var(--text);
+      padding:8px 12px;
       border-radius:999px;
-      font-weight:900;
       cursor:pointer;
-      min-width:92px;
+      font-weight:900;
+      user-select:none;
+      transition:.15s;
     }
-    .btn:disabled{opacity:.35; cursor:not-allowed}
+    .btn:hover{ transform:translateY(-1px); border-color:rgba(96,165,250,0.55); }
+    .btn:disabled{ opacity:.35; cursor:not-allowed; transform:none; }
     .pill{
-      border:1px solid var(--line);
-      background:rgba(0,0,0,.22);
-      padding:10px 14px;
+      background:rgba(96,165,250,0.14);
+      border:1px solid rgba(96,165,250,0.25);
+      color:var(--text);
+      padding:8px 12px;
       border-radius:999px;
       font-weight:900;
-      color:#fff;
-      min-width:92px;
+      min-width:86px;
       text-align:center;
     }
 
-    .frame{
-      margin-top:14px;
-      border-radius:16px;
-      overflow:hidden;
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.15));
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+    /* ✅ Canvas area keeps 16:9 and fills */
+    .stage{
+      position:relative;
+      flex:1 1 auto;
+      background:radial-gradient(1200px 500px at 50% 30%, rgba(96,165,250,0.18), rgba(0,0,0,0) 55%),
+                 linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.8));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      box-sizing:border-box;
     }
-
-    /* 16:9 유지 */
-    .ratio{
+    .paper{
       position:relative;
       width:100%;
-      padding-bottom:56.25%;
-      background:#000;
+      height:100%;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,0.08);
+      background:#0b1220;
+      display:flex;
+      align-items:center;
+      justify-content:center;
     }
     canvas{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
       display:block;
-      background:#000;
+      /* ✅ never cause scroll; fit inside */
+      max-width:100%;
+      max-height:100%;
+      width:auto;
+      height:auto;
+      background:#0b1220;
     }
 
     .footer{
+      flex:0 0 auto;
+      padding:10px 14px;
       text-align:center;
-      padding:10px 0 2px;
-      font-size:12px;
-      color:var(--muted);
+      color:rgba(148,163,184,0.9);
       font-weight:800;
+      font-size:12px;
+      border-top:1px solid rgba(255,255,255,0.06);
+      background:rgba(0,0,0,0.15);
     }
 
     .toast{
@@ -119,13 +136,227 @@
       left:50%;
       top:50%;
       transform:translate(-50%,-50%);
-      background:rgba(12,18,32,.9);
-      border:1px solid var(--line);
+      background:rgba(15,23,42,0.92);
+      border:1px solid rgba(255,255,255,0.12);
+      color:#fff;
       padding:14px 16px;
       border-radius:14px;
-      width:min(520px, 86vw);
+      font-weight:900;
+      box-shadow:0 20px 50px rgba(0,0,0,0.55);
+      max-width:min(520px, 90vw);
       text-align:center;
-      box-shadow:0 12px 40px rgba(0,0,0,.45);
       display:none;
+      z-index:5;
     }
-    .toast strong{display:block; font-weight:
+    .toast.show{ display:block; }
+
+    @media (max-width:768px){
+      .viewer{ width:98vw; height:92vh; border-radius:16px; }
+      .title small{ max-width:22ch; }
+      .stage{ padding:10px; }
+      .btn{ padding:8px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="viewer">
+      <div class="topbar">
+        <div class="title">
+          <span>EPS Flipbook Viewer</span>
+          <small id="fileName">-</small>
+        </div>
+        <div class="controls">
+          <button class="btn" id="prevBtn">◀ Prev</button>
+          <div class="pill" id="pageInfo">- / -</div>
+          <button class="btn" id="nextBtn">Next ▶</button>
+        </div>
+      </div>
+
+      <div class="stage">
+        <div class="paper" id="paper">
+          <canvas id="pdfCanvas"></canvas>
+          <div class="toast" id="toast"></div>
+        </div>
+      </div>
+
+      <div class="footer">Page-Turn Mode · No Scroll</div>
+    </div>
+  </div>
+
+  <!-- ✅ IMPORTANT: pdf.min.js MUST be next to index.html (repo root) -->
+  <script src="./pdf.min.js"></script>
+  <script>
+    (function(){
+      const toastEl = document.getElementById("toast");
+      const fileNameEl = document.getElementById("fileName");
+      const canvas = document.getElementById("pdfCanvas");
+      const ctx = canvas.getContext("2d", { alpha:false });
+
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const pageInfo = document.getElementById("pageInfo");
+
+      function showToast(msg){
+        toastEl.textContent = msg;
+        toastEl.classList.add("show");
+      }
+      function hideToast(){
+        toastEl.classList.remove("show");
+      }
+
+      // 1) pdfjsLib availability check
+      if(!window.pdfjsLib){
+        showToast("PDF Load Failed: pdfjsLib not found. Confirm pdf.min.js is in repo root next to index.html.");
+        return;
+      }
+
+      // 2) Worker path (repo root)
+      //    ✅ This is the #1 cause of “blank screen” in many installs.
+      try{
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "./pdf.worker.min.js";
+      }catch(e){
+        // ignore
+      }
+
+      // 3) Read ?file=
+      const params = new URLSearchParams(location.search);
+      const raw = params.get("file");
+
+      if(!raw){
+        showToast("No PDF specified. Use: index.html?file=pdf/eps/u01/id.pdf");
+        return;
+      }
+
+      // ✅ decode + support both relative and absolute
+      let fileParam = raw;
+      try{ fileParam = decodeURIComponent(raw); }catch(e){ /* keep raw */ }
+
+      // If it's relative, resolve it against current page URL
+      // If it's absolute (https://...), keep it.
+      let pdfUrl = fileParam;
+      try{
+        if(!/^https?:\/\//i.test(fileParam)){
+          pdfUrl = new URL(fileParam, window.location.href).toString();
+        }
+      }catch(e){
+        // fallback: as-is
+        pdfUrl = fileParam;
+      }
+
+      // UI file label
+      try{
+        const name = pdfUrl.split("/").pop().split("?")[0];
+        fileNameEl.textContent = "· " + name;
+      }catch(e){
+        fileNameEl.textContent = "· PDF";
+      }
+
+      let pdfDoc = null;
+      let pageNum = 1;
+      let rendering = false;
+      let pending = null;
+
+      function setButtons(){
+        prevBtn.disabled = !pdfDoc || pageNum <= 1 || rendering;
+        nextBtn.disabled = !pdfDoc || pageNum >= pdfDoc.numPages || rendering;
+        pageInfo.textContent = pdfDoc ? (pageNum + " / " + pdfDoc.numPages) : "- / -";
+      }
+
+      // ✅ Fit page into container (no scroll)
+      async function renderPage(num){
+        if(!pdfDoc) return;
+        rendering = true;
+        setButtons();
+        hideToast();
+
+        const page = await pdfDoc.getPage(num);
+
+        const paper = document.getElementById("paper");
+        const padding = 18; // breathing room
+        const maxW = Math.max(200, paper.clientWidth - padding);
+        const maxH = Math.max(200, paper.clientHeight - padding);
+
+        // get natural size at scale 1
+        const v1 = page.getViewport({ scale: 1 });
+
+        // scale to fit within maxW/maxH
+        const scale = Math.min(maxW / v1.width, maxH / v1.height);
+
+        const viewport = page.getViewport({ scale });
+
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
+
+        // clear
+        ctx.setTransform(1,0,0,1,0,0);
+        ctx.fillStyle = "#0b1220";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+
+        const renderTask = page.render({ canvasContext: ctx, viewport });
+        await renderTask.promise;
+
+        rendering = false;
+        setButtons();
+
+        if(pending !== null){
+          const next = pending;
+          pending = null;
+          queueRender(next);
+        }
+      }
+
+      function queueRender(num){
+        if(rendering){
+          pending = num;
+          return;
+        }
+        pageNum = num;
+        renderPage(pageNum).catch(err=>{
+          showToast("Render failed: " + (err && err.message ? err.message : err));
+          rendering = false;
+          setButtons();
+        });
+      }
+
+      prevBtn.addEventListener("click", ()=>{ if(pdfDoc && pageNum>1) queueRender(pageNum-1); });
+      nextBtn.addEventListener("click", ()=>{ if(pdfDoc && pageNum<pdfDoc.numPages) queueRender(pageNum+1); });
+
+      // Keyboard support (optional)
+      window.addEventListener("keydown", (e)=>{
+        if(e.key === "ArrowLeft") prevBtn.click();
+        if(e.key === "ArrowRight") nextBtn.click();
+      });
+
+      // ✅ Re-render on resize (keeps “꽉 차게”)
+      let resizeTimer = null;
+      const ro = new ResizeObserver(()=>{
+        if(!pdfDoc) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(()=> queueRender(pageNum), 120);
+      });
+      ro.observe(document.getElementById("paper"));
+
+      // 4) Load PDF
+      (async function init(){
+        try{
+          setButtons();
+          showToast("Loading PDF...");
+          const loadingTask = window.pdfjsLib.getDocument({
+            url: pdfUrl,
+            withCredentials: false
+          });
+          pdfDoc = await loadingTask.promise;
+          hideToast();
+          pageNum = 1;
+          setButtons();
+          await renderPage(pageNum);
+        }catch(err){
+          const msg = (err && err.message) ? err.message : String(err);
+          showToast("PDF Load Failed: " + msg);
+        }
+      })();
+    })();
+  </script>
+</body>
+</html>
