@@ -1,428 +1,46 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EPS Flipbook Viewer</title>
-
-  <style>
-    :root{
-      --bg:#0b1220;
-      --panel:#0f172a;
-      --text:#e5e7eb;
-      --muted:#94a3b8;
-      --border:rgba(255,255,255,.10);
-    }
-
-    /* ✅ absolutely no page scroll */
-    html, body{
-      height:100%;
-      margin:0;
-      background:var(--bg);
-      overflow:hidden;
-    }
-
-    /* ✅ remove scrollbars (browser-wide) */
-    *{
-      box-sizing:border-box;
-      -ms-overflow-style:none;
-      scrollbar-width:none;
-    }
-    *::-webkit-scrollbar{ width:0; height:0; }
-
-    .wrap{
-      height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-    }
-
-    .viewer{
-      width:min(1280px, 100%);
-      height:min(720px, 100%);
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid var(--border);
-      border-radius:16px;
-      overflow:hidden;
-      box-shadow:0 14px 40px rgba(0,0,0,.35);
-      display:flex;
-      flex-direction:column;
-    }
-
-    .topbar{
-      height:56px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:10px 12px;
-      background:rgba(255,255,255,.03);
-      border-bottom:1px solid var(--border);
-      color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      user-select:none;
-    }
-
-    .brand{
-      font-weight:900;
-      font-size:14px;
-      letter-spacing:.2px;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      min-width:190px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .brand small{
-      color:var(--muted);
-      font-weight:800;
-      font-size:12px;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-
-    .ctrl{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-shrink:0;
-    }
-
-    .btn{
-      background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      border:1px solid var(--border);
-      color:var(--text);
-      padding:10px 14px;
-      border-radius:999px;
-      font-weight:900;
-      cursor:pointer;
-      transition:.15s;
-      line-height:1;
-      min-width:110px;
-      text-align:center;
-    }
-    .btn:hover{ transform:translateY(-1px); }
-    .btn:disabled{ opacity:.35; cursor:not-allowed; transform:none; }
-
-    .page{
-      font-weight:900;
-      color:var(--text);
-      background:rgba(0,0,0,.20);
-      border:1px solid var(--border);
-      padding:10px 14px;
-      border-radius:999px;
-      min-width:110px;
-      text-align:center;
-    }
-
-    .stage{
-      flex:1;
-      background:linear-gradient(180deg, rgba(0,0,0,.20), rgba(0,0,0,.45));
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      position:relative;
-      overflow:hidden; /* ✅ stage also no scroll */
-    }
-
-    .paper{
-      width:100%;
-      height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-    }
-
-    canvas{
-      max-width:100%;
-      max-height:100%;
-      border-radius:14px;
-      background:#0a0f1c;
-      box-shadow:0 16px 44px rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.08);
-    }
-
-    .hint{
-      position:absolute;
-      left:0; right:0; bottom:10px;
-      text-align:center;
-      color:var(--muted);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      font-size:12px;
-      font-weight:800;
-      pointer-events:none;
-    }
-
-    .error{
-      position:absolute;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      text-align:center;
-      color:#fecaca;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-      font-weight:900;
-      background:rgba(0,0,0,.50);
-    }
-    .error.show{ display:flex; }
-
-    .error .box{
-      max-width:760px;
-      background:rgba(15,23,42,.85);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:16px;
-      padding:16px 18px;
-      box-shadow:0 14px 44px rgba(0,0,0,.45);
-    }
-    .error .box p{
-      margin:0;
-      color:#e5e7eb;
-      font-weight:800;
-      font-size:13px;
-      line-height:1.5;
-      word-break:break-word;
-    }
-    .error .box p strong{
-      color:#fff;
-      font-weight:1000;
-    }
-
-    @media (max-width:720px){
-      .viewer{ height:min(680px, 100%); }
-      .brand{ min-width:auto; }
-      .btn{ min-width:92px; padding:10px 12px; }
-      .page{ min-width:92px; }
-    }
-  </style>
+    <title>EPS-TOPIK Flipbook Player</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+    <script src="js/pdf.js"></script>
+    <script src="js/3dflipbook.min.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background: #2d3436; }
+        #container { width: 100vw; height: 100vh; }
+    </style>
 </head>
-
 <body>
-  <div class="wrap">
-    <div class="viewer" role="application" aria-label="EPS Flipbook Viewer">
-      <div class="topbar">
-        <div class="brand">
-          EPS Flipbook Viewer
-          <small id="fileName"></small>
-        </div>
+    <div id="container"></div>
 
-        <div class="ctrl">
-          <button class="btn" id="prevBtn" type="button">◀ Prev</button>
-          <div class="page" id="pageInd">- / -</div>
-          <button class="btn" id="nextBtn" type="button">Next ▶</button>
-        </div>
-      </div>
-
-      <div class="stage">
-        <div class="paper">
-          <canvas id="canvas" aria-label="PDF page canvas"></canvas>
-        </div>
-
-        <div class="hint">Page-Turn Mode · No Scroll</div>
-
-        <div class="error" id="err" role="alert" aria-live="polite">
-          <div class="box">
-            <p><strong>PDF Load Failed.</strong></p>
-            <p id="errMsg"></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ✅ IMPORTANT: Put pdf.min.js / pdf.worker.min.js next to index.html (same folder). -->
-  <script src="pdf.min.js"></script>
-  <script>
-    (function(){
-      const $ = (id)=>document.getElementById(id);
-
-      const prevBtn  = $("prevBtn");
-      const nextBtn  = $("nextBtn");
-      const pageInd  = $("pageInd");
-      const fileName = $("fileName");
-      const canvas   = $("canvas");
-      const err      = $("err");
-      const errMsg   = $("errMsg");
-
-      // ---------------------------
-      // Helpers
-      // ---------------------------
-      function showError(message){
-        err.classList.add("show");
-        errMsg.textContent = message || "Unknown error.";
-      }
-      function hideError(){
-        err.classList.remove("show");
-        errMsg.textContent = "";
-      }
-
-      function getParam(name){
-        const u = new URL(location.href);
-        return (u.searchParams.get(name) || "").trim();
-      }
-
-      // repo root: https://{user}.github.io/{repo}/
-      function repoRootUrl(){
-        const parts = location.pathname.split("/").filter(Boolean);
-        const repo = parts.length ? parts[0] : "";
-        return location.origin + "/" + repo + "/";
-      }
-
-      // file param resolution rules:
-      // 1) absolute URL: keep
-      // 2) root-relative "/pdf/..." => origin + path
-      // 3) relative "pdf/eps/u01/ph.pdf" => repoRoot + relative
-      function resolveFileUrl(file){
-        if(!file) return "";
-        const trimmed = file.trim();
-
-        if(/^https?:\/\//i.test(trimmed)) return trimmed;
-        if(trimmed.startsWith("/")) return location.origin + trimmed;
-
-        return new URL(trimmed, repoRootUrl()).toString();
-      }
-
-      // ---------------------------
-      // Read file param + display name
-      // ---------------------------
-      const fileParam = getParam("file") || getParam("f") || "";
-      const pdfUrl = resolveFileUrl(fileParam);
-
-      try{
-        fileName.textContent = fileParam ? ("· " + decodeURIComponent(fileParam).split("/").pop()) : "";
-      }catch(e){
-        fileName.textContent = fileParam ? ("· " + fileParam.split("/").pop()) : "";
-      }
-
-      // ---------------------------
-      // PDF.js setup
-      // ---------------------------
-      if(typeof window.pdfjsLib === "undefined"){
-        showError("pdfjsLib is not found. Put pdf.min.js next to index.html.");
-        return;
-      }
-
-      try{
-        pdfjsLib.GlobalWorkerOptions.workerSrc = "pdf.worker.min.js";
-      }catch(e){ /* ignore */ }
-
-      let pdfDoc = null;
-      let pageNum = 1;
-      let renderTask = null;
-
-      function setButtons(){
-        if(!pdfDoc){
-          prevBtn.disabled = true;
-          nextBtn.disabled = true;
-          pageInd.textContent = "- / -";
-          return;
-        }
-        prevBtn.disabled = (pageNum <= 1);
-        nextBtn.disabled = (pageNum >= pdfDoc.numPages);
-        pageInd.textContent = pageNum + " / " + pdfDoc.numPages;
-      }
-
-      // Fit-to-stage rendering (no scroll)
-      async function renderPage(num){
-        if(!pdfDoc) return;
-        hideError();
-
-        // cancel previous render
-        if(renderTask && typeof renderTask.cancel === "function"){
-          try{ renderTask.cancel(); }catch(e){}
+    <script>
+        // URL에서 'file' 파라미터 값을 가져오는 함수
+        function getURLParameter(name) {
+            return new URLSearchParams(window.location.search).get(name);
         }
 
-        try{
-          const page = await pdfDoc.getPage(num);
-
-          const viewport1 = page.getViewport({ scale: 1 });
-          const container = canvas.parentElement; // .paper
-          const maxW = container.clientWidth  - 32;
-          const maxH = container.clientHeight - 32;
-
-          const scale = Math.min(maxW / viewport1.width, maxH / viewport1.height);
-          const viewport = page.getViewport({ scale: Math.max(scale, 0.1) });
-
-          const ctx = canvas.getContext("2d", { alpha: false });
-
-          canvas.width  = Math.floor(viewport.width);
-          canvas.height = Math.floor(viewport.height);
-
-          renderTask = page.render({ canvasContext: ctx, viewport });
-
-          await renderTask.promise;
-          setButtons();
-
-        }catch(e){
-          // ignore cancellation errors
-          const name = (e && e.name) ? String(e.name).toLowerCase() : "";
-          if(name.includes("cancel")) return;
-
-          showError(String(e));
+        // 지침 11번(소문자 규칙)에 따라 경로를 강제로 소문자로 변환하는 로직 포함
+        var pdfFile = getURLParameter('file');
+        
+        if (pdfFile) {
+            // 경로 소문자화 및 확장자 확인
+            pdfFile = pdfFile.toLowerCase();
+            
+            // 플레이어 초기화 로직
+            $('#container').FlipBook({
+                pdf: pdfFile, // n8n에서 전달한 pdf/eps/u01/ph.pdf 등의 경로
+                template: {
+                    html: 'templates/default-book-view.html',
+                    styles: ['css/short-black-book-view.css'],
+                    links: [{rel: 'stylesheet', href: 'css/font-awesome.min.css'}]
+                },
+                controlsProps: {
+                    downloadURL: false // 보안 지침에 따라 다운로드 제한
+                }
+            });
+        } else {
+            document.write("<h1 style='color:white; text-align:center; padding-top:20%'>PDF File Not Found</h1>");
         }
-      }
-
-      async function loadPdf(){
-        if(!pdfUrl){
-          showError("Missing file parameter. Example: index.html?file=pdf/eps/u01/ph.pdf");
-          return;
-        }
-
-        try{
-          const loadingTask = pdfjsLib.getDocument({
-            url: pdfUrl,
-            withCredentials: false
-          });
-
-          pdfDoc = await loadingTask.promise;
-          pageNum = 1;
-          setButtons();
-          await renderPage(pageNum);
-
-        }catch(e){
-          showError("Cannot load PDF: " + pdfUrl + " | " + String(e));
-        }
-      }
-
-      // ---------------------------
-      // Controls
-      // ---------------------------
-      prevBtn.addEventListener("click", async ()=>{
-        if(!pdfDoc || pageNum <= 1) return;
-        pageNum--;
-        await renderPage(pageNum);
-      });
-
-      nextBtn.addEventListener("click", async ()=>{
-        if(!pdfDoc || pageNum >= pdfDoc.numPages) return;
-        pageNum++;
-        await renderPage(pageNum);
-      });
-
-      // keyboard page turn (optional but useful)
-      window.addEventListener("keydown", (e)=>{
-        if(!pdfDoc) return;
-        if(e.key === "ArrowLeft"){ prevBtn.click(); }
-        if(e.key === "ArrowRight"){ nextBtn.click(); }
-      });
-
-      // re-render on resize (keeps fit-to-stage)
-      let resizeTimer = null;
-      window.addEventListener("resize", ()=>{
-        if(!pdfDoc) return;
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(()=>renderPage(pageNum), 120);
-      });
-
-      // init
-      setButtons();
-      loadPdf();
-    })();
-  </script>
+    </script>
 </body>
 </html>
