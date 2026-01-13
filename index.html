@@ -2,30 +2,26 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPS-TOPIK Flipbook Player</title>
     <script src="js/jquery.min.js"></script>
     <script src="js/pdf.min.js"></script>
     <script src="js/3dflipbook.min.js"></script>
     <style>
         body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #2d3436; }
-        #flipbook-container { width: 100vw; height: 100vh; }
+        #fb-container { width: 100vw; height: 100vh; }
     </style>
 </head>
 <body>
-    <div id="flipbook-container"></div>
-
+    <div id="fb-container"></div>
     <script>
-        // 1. URL 파라미터에서 파일 경로 추출
         const urlParams = new URLSearchParams(window.location.search);
         let pdfPath = urlParams.get('file');
 
         if (pdfPath) {
-            // 2. 지침 11번 준수: 모든 경로는 소문자로 처리 
+            // 지침 11번 준수: 모든 경로는 소문자로 인식
             pdfPath = pdfPath.toLowerCase();
 
-            // 3. 플립북 실행
-            $('#flipbook-container').FlipBook({
+            $('#fb-container').FlipBook({
                 pdf: pdfPath,
                 template: {
                     html: 'templates/default-book-view.html',
@@ -33,12 +29,12 @@
                     links: [{ rel: 'stylesheet', href: 'css/font-awesome.min.css' }]
                 },
                 controlsProps: {
-                    downloadURL: false, // 지침 7번: eBook 다운로드 보호 적용 [cite: 39]
+                    downloadURL: false, // 지침 7번: eBook 다운로드 방지 보호
                     printURL: false
                 }
             });
         } else {
-            document.body.innerHTML = '<h2 style="color:white; text-align:center; margin-top:20%;">PDF 파일을 찾을 수 없습니다. (Path Empty)</h2>';
+            document.body.innerHTML = '<h2 style="color:white; text-align:center; margin-top:20%;">PDF File Path Missing</h2>';
         }
     </script>
 </body>
