@@ -6,93 +6,112 @@
   <title>EPS Flipbook Viewer</title>
   <style>
     :root{
-      --bg0:#070b14; --bg1:#0b1220; --card:#0d1426; --line:#1f2a44;
-      --text:#e5e7eb; --muted:#94a3b8; --btn:#0f172a; --btn2:#111c33;
+      --bg1:#071024; --bg2:#0a1633;
+      --card:#0b1220; --card2:#0f1a2e;
+      --line:rgba(255,255,255,.08);
+      --txt:#e5e7eb; --muted:#94a3b8;
+      --btn:#111c33; --btn2:#152449;
       --accent:#60a5fa;
     }
-    html,body{height:100%; margin:0; background:linear-gradient(180deg,var(--bg0),var(--bg1)); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
-    /* No scroll */
-    body{overflow:hidden;}
-
-    .wrap{
-      height:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      box-sizing:border-box;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;
+      background:radial-gradient(1200px 600px at 40% 20%, rgba(96,165,250,.18), transparent 60%),
+                 linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--txt);
     }
-    .viewer{
-      width:min(1180px, 98vw);
-      height:min(720px, 86vh);
-      background:rgba(255,255,255,0.03);
-      border:1px solid rgba(255,255,255,0.08);
+
+    /* ✅ 16:9 프레임: WP의 Summary와 같은 방식으로 꽉 차게 */
+    .stage{
+      width:min(1200px, 96vw);
+      margin:24px auto;
+      padding:18px;
       border-radius:18px;
-      box-shadow:0 25px 60px rgba(0,0,0,.45);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--line);
+      box-shadow:0 18px 60px rgba(0,0,0,.35);
     }
 
     .topbar{
       display:flex; align-items:center; justify-content:space-between;
-      padding:12px 14px;
-      background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));
-      border-bottom:1px solid rgba(255,255,255,0.08);
-      gap:10px;
+      gap:14px;
+      padding:14px 14px 12px;
+      border-radius:14px;
+      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border:1px solid var(--line);
     }
     .title{
       font-weight:900;
-      font-size:14px;
-      color:var(--text);
       letter-spacing:.2px;
-      display:flex; align-items:center; gap:10px;
-      min-width:0;
+      font-size:14px;
+      color:#fff;
+      display:flex; gap:10px; align-items:center;
     }
-    .title small{color:var(--muted); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:45ch;}
-    .controls{display:flex; align-items:center; gap:10px;}
+    .title small{
+      color:var(--muted);
+      font-weight:800;
+      opacity:.95;
+    }
+
+    .ctrl{
+      display:flex; align-items:center; gap:10px;
+      user-select:none;
+    }
     .btn{
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      color:var(--text);
-      padding:8px 12px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, var(--btn2), var(--btn));
+      color:#fff;
+      padding:10px 14px;
       border-radius:999px;
       font-weight:900;
       cursor:pointer;
-      user-select:none;
+      min-width:92px;
     }
-    .btn:disabled{opacity:.35; cursor:not-allowed;}
-    .pagepill{
-      background:rgba(255,255,255,0.06);
-      border:1px solid rgba(255,255,255,0.12);
-      padding:8px 12px;
+    .btn:disabled{opacity:.35; cursor:not-allowed}
+    .pill{
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      padding:10px 14px;
       border-radius:999px;
       font-weight:900;
-      min-width:84px;
+      color:#fff;
+      min-width:92px;
       text-align:center;
     }
 
-    .stage{
-      flex:1;
-      position:relative;
-      background:radial-gradient(1200px 600px at 50% 40%, rgba(255,255,255,0.06), rgba(0,0,0,0));
-      display:flex; align-items:center; justify-content:center;
+    .frame{
+      margin-top:14px;
+      border-radius:16px;
       overflow:hidden;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.15));
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    /* 16:9 유지 */
+    .ratio{
+      position:relative;
+      width:100%;
+      padding-bottom:56.25%;
+      background:#000;
     }
     canvas{
-      max-width:100%;
-      max-height:100%;
-      width:auto;
-      height:auto;
-      background:transparent;
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      display:block;
+      background:#000;
     }
 
-    .hint{
+    .footer{
       text-align:center;
-      padding:10px 0 14px;
+      padding:10px 0 2px;
+      font-size:12px;
       color:var(--muted);
       font-weight:800;
-      font-size:12px;
     }
 
     .toast{
@@ -100,189 +119,13 @@
       left:50%;
       top:50%;
       transform:translate(-50%,-50%);
-      background:rgba(0,0,0,0.55);
-      border:1px solid rgba(255,255,255,0.12);
-      color:var(--text);
+      background:rgba(12,18,32,.9);
+      border:1px solid var(--line);
       padding:14px 16px;
       border-radius:14px;
-      box-shadow:0 12px 30px rgba(0,0,0,.35);
-      font-weight:900;
+      width:min(520px, 86vw);
       text-align:center;
-      max-width:min(520px, 92vw);
+      box-shadow:0 12px 40px rgba(0,0,0,.45);
       display:none;
     }
-    .toast small{display:block; margin-top:6px; color:var(--muted); font-weight:800;}
-
-    @media (max-width:768px){
-      .wrap{padding:10px;}
-      .viewer{width:98vw; height:88vh;}
-      .title small{max-width:28ch;}
-    }
-  </style>
-
-  <!-- ✅ CDN pdf.js (no local files needed) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.js"></script>
-</head>
-
-<body>
-  <div class="wrap">
-    <div class="viewer">
-      <div class="topbar">
-        <div class="title">
-          EPS Flipbook Viewer
-          <small id="fileName">-</small>
-        </div>
-        <div class="controls">
-          <button class="btn" id="prevBtn">◀ Prev</button>
-          <div class="pagepill" id="pageInfo">- / -</div>
-          <button class="btn" id="nextBtn">Next ▶</button>
-        </div>
-      </div>
-
-      <div class="stage" id="stage">
-        <canvas id="pdfCanvas"></canvas>
-        <div class="toast" id="toast">
-          PDF Load Failed.
-          <small id="toastMsg">file parameter is missing</small>
-        </div>
-      </div>
-
-      <div class="hint">Page-Turn Mode · No Scroll</div>
-    </div>
-  </div>
-
-  <script>
-    // ✅ Worker from CDN (stable)
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.js";
-
-    const qs = new URLSearchParams(location.search);
-    const fileParam = qs.get("file");
-
-    const toast = document.getElementById("toast");
-    const toastMsg = document.getElementById("toastMsg");
-    const fileName = document.getElementById("fileName");
-    const pageInfo = document.getElementById("pageInfo");
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const canvas = document.getElementById("pdfCanvas");
-    const ctx = canvas.getContext("2d", { alpha: true });
-
-    let pdfDoc = null;
-    let pageNum = 1;
-    let rendering = false;
-
-    function showToast(msg){
-      toast.style.display = "block";
-      toastMsg.textContent = msg;
-      prevBtn.disabled = true;
-      nextBtn.disabled = true;
-      pageInfo.textContent = "- / -";
-    }
-    function hideToast(){ toast.style.display = "none"; }
-
-    function resolveFileUrl(input){
-      // ✅ Allow both relative and absolute
-      // If relative: resolve against current URL (works on jsDelivr, works on GitHub Pages too)
-      try{
-        return new URL(input, window.location.href).href;
-      }catch(e){
-        return input;
-      }
-    }
-
-    function updateControls(){
-      pageInfo.textContent = `${pageNum} / ${pdfDoc.numPages}`;
-      prevBtn.disabled = (pageNum <= 1);
-      nextBtn.disabled = (pageNum >= pdfDoc.numPages);
-    }
-
-    async function renderPage(num){
-      if(!pdfDoc || rendering) return;
-      rendering = true;
-
-      const page = await pdfDoc.getPage(num);
-
-      // ✅ Fit canvas into stage (no scroll) with safe margins
-      const stage = document.getElementById("stage");
-      const rect = stage.getBoundingClientRect();
-      const margin = 24; // inner padding feel
-      const targetW = rect.width - margin * 2;
-      const targetH = rect.height - margin * 2;
-
-      const viewport1 = page.getViewport({ scale: 1 });
-      const scale = Math.min(targetW / viewport1.width, targetH / viewport1.height);
-
-      const viewport = page.getViewport({ scale });
-
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-
-      ctx.setTransform(1,0,0,1,0,0);
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-
-      await page.render({ canvasContext: ctx, viewport }).promise;
-
-      updateControls();
-      rendering = false;
-    }
-
-    function clampPage(n){
-      if(!pdfDoc) return 1;
-      return Math.max(1, Math.min(pdfDoc.numPages, n));
-    }
-
-    prevBtn.addEventListener("click", async ()=>{
-      pageNum = clampPage(pageNum - 1);
-      await renderPage(pageNum);
-    });
-    nextBtn.addEventListener("click", async ()=>{
-      pageNum = clampPage(pageNum + 1);
-      await renderPage(pageNum);
-    });
-
-    // ✅ Keyboard support
-    window.addEventListener("keydown", async (e)=>{
-      if(e.key === "ArrowLeft"){ prevBtn.click(); }
-      if(e.key === "ArrowRight"){ nextBtn.click(); }
-    });
-
-    // ✅ Re-render on resize (keep crisp, no scroll)
-    let resizeTimer = null;
-    window.addEventListener("resize", ()=>{
-      if(!pdfDoc) return;
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(()=>renderPage(pageNum), 180);
-    });
-
-    (async function init(){
-      if(!fileParam){
-        showToast("Missing ?file=PDF_URL");
-        return;
-      }
-
-      const pdfUrl = resolveFileUrl(fileParam);
-
-      // display filename
-      try{
-        const u = new URL(pdfUrl);
-        fileName.textContent = u.pathname.split("/").pop();
-      }catch(e){
-        fileName.textContent = String(fileParam).split("/").pop();
-      }
-
-      try{
-        hideToast();
-        const loadingTask = pdfjsLib.getDocument({ url: pdfUrl });
-        pdfDoc = await loadingTask.promise;
-
-        pageNum = 1;
-        updateControls();
-        await renderPage(pageNum);
-      }catch(err){
-        showToast("Cannot load PDF (check URL / CORS / file exists)");
-      }
-    })();
-  </script>
-</body>
-</html>
+    .toast strong{display:block; font-weight:
