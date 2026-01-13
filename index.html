@@ -3,67 +3,76 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>EPS-TOPIK Slide Viewer</title>
+  <title>EPS-TOPIK Slides</title>
   <style>
-    html, body { height: 100%; margin: 0; overflow: hidden; background: #0b1220; }
-    .wrap { height: 100%; display: grid; place-items: center; padding: 0; }
-    /* 16:9 fixed frame */
+    html, body {
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #0b1220;
+    }
+    .wrap {
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
     .frame {
       width: min(1200px, 100vw);
       aspect-ratio: 16 / 9;
+      background: #0b1220;
       border-radius: 14px;
       overflow: hidden;
       box-shadow: 0 20px 80px rgba(0,0,0,.45);
-      background: #0b1220;
     }
-    iframe { width: 100%; height: 100%; border: 0; display: block; }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="frame">
-      <iframe id="viewer" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      <iframe id="viewer" loading="lazy"></iframe>
     </div>
   </div>
 
   <script>
-    // index.html?file=pdf/eps/u01/ph.pdf
+    // 사용법: index.html?file=pdf/eps/u01/ph.pdf
     const params = new URLSearchParams(location.search);
     let file = params.get("file") || "";
 
-    // Normalize: if full URL points to this same site, convert to relative
+    // 절대 URL → 상대경로로 정규화 (같은 도메인일 경우)
     if (file.startsWith("http")) {
       try {
         const u = new URL(file);
-        const siteOrigin = location.origin;
-        if (u.origin === siteOrigin) {
-          file = (u.pathname + u.search + u.hash).replace(/^\/+/, "");
+        if (u.origin === location.origin) {
+          file = u.pathname.replace(/^\/+/, "");
         }
       } catch (e) {}
     }
 
-    // Block cross-origin PDFs (keeps stable, avoids white-box failures)
+    // 외부 도메인 PDF 차단 (안정성)
     if (file.startsWith("http")) {
       document.body.innerHTML =
-        "<div style='color:#fff;font:16px/1.6 system-ui;padding:24px;max-width:900px;'>" +
-        "<b>Blocked:</b> Cross-origin PDF URL.<br/>" +
-        "Use a relative path like: <b>pdf/eps/u01/ph.pdf</b><br/><br/>" +
-        "Example:<br/>" +
-        "<code>index.html?file=pdf/eps/u01/ph.pdf</code>" +
+        "<div style='color:#fff;padding:24px;font:16px/1.6 system-ui'>" +
+        "<b>Blocked:</b> Use relative path like <code>pdf/eps/u01/ph.pdf</code>" +
         "</div>";
-      throw new Error("Cross-origin PDF blocked. Use relative path.");
+      throw new Error("Cross-origin PDF blocked");
     }
 
-    file = file.replace(/^\/+/, ""); // remove leading slash
+    file = file.replace(/^\/+/, "");
 
-    // If missing, show help
     if (!file) {
       document.body.innerHTML =
-        "<div style='color:#fff;font:16px/1.6 system-ui;padding:24px;max-width:900px;'>" +
-        "<b>Usage:</b> <code>index.html?file=pdf/eps/u01/ph.pdf</code>" +
+        "<div style='color:#fff;padding:24px;font:16px/1.6 system-ui'>" +
+        "Usage: <code>index.html?file=pdf/eps/u01/ph.pdf</code>" +
         "</div>";
     } else {
-      document.getElementById("viewer").src = "viewer.html?file=" + encodeURIComponent(file);
+      document.getElementById("viewer").src =
+        "viewer.html?file=" + encodeURIComponent(file);
     }
   </script>
 </body>
