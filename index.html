@@ -4,156 +4,82 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>EPS Flipbook Viewer</title>
-
   <style>
     :root{
-      --bg1:#050914;
-      --bg2:#0a1430;
-      --panel:#0b1220;
-      --panel2:#0a1020;
-      --line:rgba(255,255,255,.08);
-      --text:rgba(255,255,255,.92);
-      --muted:rgba(255,255,255,.62);
-      --btn:#111a2e;
-      --btn2:#0f172a;
-      --accent:#3b82f6;
-      --shadow:0 18px 60px rgba(0,0,0,.55);
-      --radius:18px;
+      --bg0:#070b14; --bg1:#0b1220; --card:#0d1426; --line:#1f2a44;
+      --text:#e5e7eb; --muted:#94a3b8; --btn:#0f172a; --btn2:#111c33;
+      --accent:#60a5fa;
     }
-    
-    html,body{
+    html,body{height:100%; margin:0; background:linear-gradient(180deg,var(--bg0),var(--bg1)); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;}
+    /* No scroll */
+    body{overflow:hidden;}
+
+    .wrap{
       height:100%;
-      margin:0;
-      background:radial-gradient(1200px 800px at 50% 0%, var(--bg2), var(--bg1));
-      color:var(--text);
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,Arial,sans-serif;
-      overflow:hidden; /* ✅ no scroll */
-    }
-
-    /* Center stage (fills screen nicely on PC) */
-    .stage{
-      height:100vh;
-      width:100vw;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-      box-sizing:border-box;
-    }
-
-    /* ✅ 16:9 container, 최대한 크게 */
-    .viewer{
-      width:min(1280px, calc(100vw - 24px));
-      aspect-ratio:16 / 9;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-    }
-
-    /* Header */
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:12px 14px;
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,0));
-      border-bottom:1px solid var(--line);
-    }
-
-    .title{
-      display:flex;
-      align-items:baseline;
-      gap:10px;
-      min-width:0;
-    }
-    .title b{
-      font-size:14px;
-      letter-spacing:.2px;
-      white-space:nowrap;
-    }
-    .title span{
-      font-size:12px;
-      color:var(--muted);
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-      max-width:42vw;
-    }
-
-    .controls{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:nowrap;
-    }
-
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding:9px 12px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
-      color:var(--text);
-      cursor:pointer;
-      font-weight:900;
-      font-size:13px;
-      user-select:none;
-      min-width:92px;
-      transition:transform .08s ease, opacity .2s ease;
-    }
-    .btn:active{ transform:scale(.98); }
-    .btn[disabled]{ opacity:.35; cursor:not-allowed; }
-
-    .pill{
-      padding:9px 14px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:rgba(15,23,42,.6);
-      font-weight:1000;
-      color:var(--text);
-      font-size:13px;
-      white-space:nowrap;
-      min-width:90px;
-      text-align:center;
-    }
-
-    /* Canvas area */
-    .body{
-      position:relative;
-      flex:1;
-      background:radial-gradient(900px 600px at 50% 30%, rgba(255,255,255,.05), rgba(0,0,0,0));
       display:flex;
       align-items:center;
       justify-content:center;
       padding:18px;
       box-sizing:border-box;
     }
-
-    /* the “page” */
-    .page-shell{
-      width:100%;
-      height:100%;
-      background:#0a0f1f;
-      border:1px solid rgba(255,255,255,.09);
-      border-radius:16px;
-      box-shadow:0 12px 40px rgba(0,0,0,.55) inset;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+    .viewer{
+      width:min(1180px, 98vw);
+      height:min(720px, 86vh);
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:18px;
+      box-shadow:0 25px 60px rgba(0,0,0,.45);
       overflow:hidden;
-      position:relative;
+      display:flex;
+      flex-direction:column;
     }
 
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px;
+      background:linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02));
+      border-bottom:1px solid rgba(255,255,255,0.08);
+      gap:10px;
+    }
+    .title{
+      font-weight:900;
+      font-size:14px;
+      color:var(--text);
+      letter-spacing:.2px;
+      display:flex; align-items:center; gap:10px;
+      min-width:0;
+    }
+    .title small{color:var(--muted); font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:45ch;}
+    .controls{display:flex; align-items:center; gap:10px;}
+    .btn{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      color:var(--text);
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:disabled{opacity:.35; cursor:not-allowed;}
+    .pagepill{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.12);
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:900;
+      min-width:84px;
+      text-align:center;
+    }
+
+    .stage{
+      flex:1;
+      position:relative;
+      background:radial-gradient(1200px 600px at 50% 40%, rgba(255,255,255,0.06), rgba(0,0,0,0));
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden;
+    }
     canvas{
-      /* ✅ canvas 자체를 최대한 키우되, “페이지 비율 유지” */
       max-width:100%;
       max-height:100%;
       width:auto;
@@ -161,243 +87,201 @@
       background:transparent;
     }
 
-    /* Hint footer */
-    .footer{
-      padding:10px 14px 14px;
+    .hint{
       text-align:center;
-      color:rgba(255,255,255,.55);
+      padding:10px 0 14px;
+      color:var(--muted);
+      font-weight:800;
       font-size:12px;
-      font-weight:900;
-      letter-spacing:.2px;
     }
 
-    /* Error toast */
     .toast{
       position:absolute;
       left:50%;
       top:50%;
       transform:translate(-50%,-50%);
-      max-width:min(520px, 90%);
-      background:rgba(15,23,42,.92);
-      border:1px solid rgba(255,255,255,.14);
-      box-shadow:0 20px 60px rgba(0,0,0,.55);
-      border-radius:14px;
+      background:rgba(0,0,0,0.55);
+      border:1px solid rgba(255,255,255,0.12);
+      color:var(--text);
       padding:14px 16px;
+      border-radius:14px;
+      box-shadow:0 12px 30px rgba(0,0,0,.35);
+      font-weight:900;
       text-align:center;
+      max-width:min(520px, 92vw);
       display:none;
-      z-index:5;
     }
-    .toast b{ display:block; font-size:13px; margin-bottom:6px; }
-    .toast p{ margin:0; font-size:12px; color:rgba(255,255,255,.74); line-height:1.35; }
-    .toast code{
-      display:inline-block;
-      padding:2px 6px;
-      border-radius:8px;
-      background:rgba(0,0,0,.35);
-      border:1px solid rgba(255,255,255,.10);
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-      font-size:11px;
-      color:rgba(255,255,255,.85);
-    }
+    .toast small{display:block; margin-top:6px; color:var(--muted); font-weight:800;}
 
-    /* ✅ Mobile: 화면을 더 꽉 채우기 */
-    @media (max-width: 768px){
-      .stage{ padding:10px; }
-      .viewer{
-        width:calc(100vw - 12px);
-        aspect-ratio:16/9;
-      }
-      .title span{ max-width:32vw; }
-      .btn{ min-width:78px; padding:8px 10px; font-size:12px; }
-      .pill{ padding:8px 10px; font-size:12px; min-width:78px; }
-      .body{ padding:10px; }
-      .footer{ padding-bottom:10px; }
+    @media (max-width:768px){
+      .wrap{padding:10px;}
+      .viewer{width:98vw; height:88vh;}
+      .title small{max-width:28ch;}
     }
   </style>
+
+  <!-- ✅ CDN pdf.js (no local files needed) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.min.js"></script>
 </head>
 
 <body>
-  <div class="stage">
-    <div class="viewer" role="application" aria-label="EPS Flipbook Viewer">
+  <div class="wrap">
+    <div class="viewer">
       <div class="topbar">
         <div class="title">
-          <b>EPS Flipbook Viewer</b>
-          <span id="fileLabel">-</span>
+          EPS Flipbook Viewer
+          <small id="fileName">-</small>
         </div>
-
         <div class="controls">
-          <button class="btn" id="prevBtn" type="button">◀ Prev</button>
-          <div class="pill" id="pagePill">- / -</div>
-          <button class="btn" id="nextBtn" type="button">Next ▶</button>
+          <button class="btn" id="prevBtn">◀ Prev</button>
+          <div class="pagepill" id="pageInfo">- / -</div>
+          <button class="btn" id="nextBtn">Next ▶</button>
         </div>
       </div>
 
-      <div class="body">
-        <div class="page-shell" id="pageShell">
-          <canvas id="pdfCanvas"></canvas>
-
-          <div class="toast" id="toast">
-            <b id="toastTitle">PDF Load Failed</b>
-            <p id="toastMsg">Please check the file path or pdf.js scripts.</p>
-          </div>
+      <div class="stage" id="stage">
+        <canvas id="pdfCanvas"></canvas>
+        <div class="toast" id="toast">
+          PDF Load Failed.
+          <small id="toastMsg">file parameter is missing</small>
         </div>
       </div>
 
-      <div class="footer">Page-Turn Mode · No Scroll</div>
+      <div class="hint">Page-Turn Mode · No Scroll</div>
     </div>
   </div>
 
-  <!-- ✅ IMPORTANT: legacy/global build (window.pdfjsLib) -->
-  <script src="./pdf.min.js"></script>
   <script>
-    (function () {
-      const toast = (title, msg) => {
-        const el = document.getElementById("toast");
-        document.getElementById("toastTitle").textContent = title || "Error";
-        document.getElementById("toastMsg").innerHTML = msg || "";
-        el.style.display = "block";
-      };
+    // ✅ Worker from CDN (stable)
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.5.136/pdf.worker.min.js";
 
-      // 1) pdfjsLib check
-      if (!window.pdfjsLib) {
-        toast(
-          "PDF Load Failed",
-          'pdfjsLib is not found. Put <code>pdf.min.js</code> next to <code>index.html</code>.'
-        );
+    const qs = new URLSearchParams(location.search);
+    const fileParam = qs.get("file");
+
+    const toast = document.getElementById("toast");
+    const toastMsg = document.getElementById("toastMsg");
+    const fileName = document.getElementById("fileName");
+    const pageInfo = document.getElementById("pageInfo");
+    const prevBtn = document.getElementById("prevBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const canvas = document.getElementById("pdfCanvas");
+    const ctx = canvas.getContext("2d", { alpha: true });
+
+    let pdfDoc = null;
+    let pageNum = 1;
+    let rendering = false;
+
+    function showToast(msg){
+      toast.style.display = "block";
+      toastMsg.textContent = msg;
+      prevBtn.disabled = true;
+      nextBtn.disabled = true;
+      pageInfo.textContent = "- / -";
+    }
+    function hideToast(){ toast.style.display = "none"; }
+
+    function resolveFileUrl(input){
+      // ✅ Allow both relative and absolute
+      // If relative: resolve against current URL (works on jsDelivr, works on GitHub Pages too)
+      try{
+        return new URL(input, window.location.href).href;
+      }catch(e){
+        return input;
+      }
+    }
+
+    function updateControls(){
+      pageInfo.textContent = `${pageNum} / ${pdfDoc.numPages}`;
+      prevBtn.disabled = (pageNum <= 1);
+      nextBtn.disabled = (pageNum >= pdfDoc.numPages);
+    }
+
+    async function renderPage(num){
+      if(!pdfDoc || rendering) return;
+      rendering = true;
+
+      const page = await pdfDoc.getPage(num);
+
+      // ✅ Fit canvas into stage (no scroll) with safe margins
+      const stage = document.getElementById("stage");
+      const rect = stage.getBoundingClientRect();
+      const margin = 24; // inner padding feel
+      const targetW = rect.width - margin * 2;
+      const targetH = rect.height - margin * 2;
+
+      const viewport1 = page.getViewport({ scale: 1 });
+      const scale = Math.min(targetW / viewport1.width, targetH / viewport1.height);
+
+      const viewport = page.getViewport({ scale });
+
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+
+      updateControls();
+      rendering = false;
+    }
+
+    function clampPage(n){
+      if(!pdfDoc) return 1;
+      return Math.max(1, Math.min(pdfDoc.numPages, n));
+    }
+
+    prevBtn.addEventListener("click", async ()=>{
+      pageNum = clampPage(pageNum - 1);
+      await renderPage(pageNum);
+    });
+    nextBtn.addEventListener("click", async ()=>{
+      pageNum = clampPage(pageNum + 1);
+      await renderPage(pageNum);
+    });
+
+    // ✅ Keyboard support
+    window.addEventListener("keydown", async (e)=>{
+      if(e.key === "ArrowLeft"){ prevBtn.click(); }
+      if(e.key === "ArrowRight"){ nextBtn.click(); }
+    });
+
+    // ✅ Re-render on resize (keep crisp, no scroll)
+    let resizeTimer = null;
+    window.addEventListener("resize", ()=>{
+      if(!pdfDoc) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(()=>renderPage(pageNum), 180);
+    });
+
+    (async function init(){
+      if(!fileParam){
+        showToast("Missing ?file=PDF_URL");
         return;
       }
 
-      // 2) worker 설정 (같은 폴더에 pdf.worker.min.js 있어야 함)
-      try {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = "./pdf.worker.min.js";
-      } catch (e) {
-        // ignore
+      const pdfUrl = resolveFileUrl(fileParam);
+
+      // display filename
+      try{
+        const u = new URL(pdfUrl);
+        fileName.textContent = u.pathname.split("/").pop();
+      }catch(e){
+        fileName.textContent = String(fileParam).split("/").pop();
       }
 
-      // 3) query string: ?file=pdf/eps/u01/id.pdf  (relative path OK)
-      const params = new URLSearchParams(location.search);
-      const relFile = params.get("file");
+      try{
+        hideToast();
+        const loadingTask = pdfjsLib.getDocument({ url: pdfUrl });
+        pdfDoc = await loadingTask.promise;
 
-      if (!relFile) {
-        toast(
-          "No PDF specified",
-          'URL must include <code>?file=pdf/eps/u01/id.pdf</code>'
-        );
-        return;
+        pageNum = 1;
+        updateControls();
+        await renderPage(pageNum);
+      }catch(err){
+        showToast("Cannot load PDF (check URL / CORS / file exists)");
       }
-
-      // display label
-      const label = relFile.split("/").slice(-1)[0] || relFile;
-      document.getElementById("fileLabel").textContent = "· " + label;
-
-      // 4) internal state
-      let pdfDoc = null;
-      let pageNum = 1;
-
-      const canvas = document.getElementById("pdfCanvas");
-      const ctx = canvas.getContext("2d", { alpha: false });
-
-      const prevBtn = document.getElementById("prevBtn");
-      const nextBtn = document.getElementById("nextBtn");
-      const pagePill = document.getElementById("pagePill");
-
-      const setButtons = () => {
-        if (!pdfDoc) {
-          prevBtn.disabled = true;
-          nextBtn.disabled = true;
-          pagePill.textContent = "- / -";
-          return;
-        }
-        prevBtn.disabled = (pageNum <= 1);
-        nextBtn.disabled = (pageNum >= pdfDoc.numPages);
-        pagePill.textContent = `${pageNum} / ${pdfDoc.numPages}`;
-      };
-
-      // 5) render with "fit inside 16:9 area"
-      const renderPage = async () => {
-        if (!pdfDoc) return;
-
-        const page = await pdfDoc.getPage(pageNum);
-
-        // base viewport at 1.0
-        const viewport0 = page.getViewport({ scale: 1 });
-
-        // available area (inside shell)
-        const shell = document.getElementById("pageShell");
-        const shellW = shell.clientWidth;
-        const shellH = shell.clientHeight;
-
-        // fit scale to container
-        const scale = Math.min(shellW / viewport0.width, shellH / viewport0.height);
-
-        // use devicePixelRatio for crispness
-        const dpr = Math.min(window.devicePixelRatio || 1, 2); // cap to avoid memory spikes on mobile
-        const viewport = page.getViewport({ scale: scale * dpr });
-
-        canvas.width = Math.floor(viewport.width);
-        canvas.height = Math.floor(viewport.height);
-
-        // CSS size (fit)
-        canvas.style.width = Math.floor(viewport.width / dpr) + "px";
-        canvas.style.height = Math.floor(viewport.height / dpr) + "px";
-
-        // render
-        const renderCtx = { canvasContext: ctx, viewport };
-        await page.render(renderCtx).promise;
-
-        setButtons();
-      };
-
-      // 6) navigation
-      prevBtn.addEventListener("click", async () => {
-        if (!pdfDoc || pageNum <= 1) return;
-        pageNum -= 1;
-        await renderPage();
-      });
-
-      nextBtn.addEventListener("click", async () => {
-        if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
-        pageNum += 1;
-        await renderPage();
-      });
-
-      // keyboard support
-      window.addEventListener("keydown", async (e) => {
-        if (e.key === "ArrowLeft") prevBtn.click();
-        if (e.key === "ArrowRight") nextBtn.click();
-      });
-
-      // resize: re-fit current page
-      let resizeTimer = null;
-      window.addEventListener("resize", () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          renderPage().catch(()=>{});
-        }, 120);
-      });
-
-      // 7) load document (relative path works on GitHub Pages)
-      const url = relFile;
-
-      // hide toast if shown
-      document.getElementById("toast").style.display = "none";
-
-      window.pdfjsLib.getDocument({ url }).promise
-        .then(async (doc) => {
-          pdfDoc = doc;
-          pageNum = 1;
-          setButtons();
-          await renderPage();
-        })
-        .catch((err) => {
-          const msg = (err && err.message) ? err.message : String(err);
-          toast(
-            "PDF Load Failed",
-            `Cannot load: <code>${url}</code><br/>${msg}`
-          );
-          setButtons();
-        });
-
     })();
   </script>
 </body>
