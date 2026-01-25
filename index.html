@@ -12,10 +12,11 @@
     :root{
       --bg:#0b1220;
       --frame:#000;
-      --btnSize:36px;
+      --btn:36px;
+      --pad:10px; /* 프레임 최소 여백 */
     }
     html,body{height:100%; margin:0; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;}
-    /* 16:9 wrapper를 iframe 쪽에서 주고, viewer는 100%를 꽉 채운다고 가정 */
+
     .wrap{
       height:100%;
       width:100%;
@@ -26,7 +27,6 @@
       overflow:hidden;
     }
 
-    /* 검은 배경은 "프레임 역할"만 */
     .stage{
       position:relative;
       width:100%;
@@ -37,7 +37,7 @@
       box-shadow:0 10px 28px rgba(0,0,0,.35);
     }
 
-    /* 캔버스는 최대 확대 (contain이 아니라 "최대한 키우되 잘리지 않게") */
+    /* 캔버스: 최대 확대(여백 최소) */
     .canvasBox{
       position:absolute;
       inset:0;
@@ -45,25 +45,24 @@
       align-items:center;
       justify-content:center;
       background:var(--frame);
+      padding:var(--pad);
+      box-sizing:border-box;
     }
     canvas{
-      max-width:100%;
-      max-height:100%;
-      width:auto;
-      height:auto;
       display:block;
       background:transparent;
+      image-rendering:auto;
     }
 
-    /* 버튼: 하단 좌/우, 원형 유지, 텍스트 없음 */
+    /* 버튼: 36px, 하단 좌/우 고정, Prev/Next 텍스트 없음 */
     .navBtn{
       position:absolute;
-      bottom:12px;
-      width:var(--btnSize);
-      height:var(--btnSize);
+      bottom:14px;
+      width:var(--btn);
+      height:var(--btn);
       border-radius:999px;
       border:none;
-      background:rgba(255,255,255,0.85);
+      background:rgba(255,255,255,0.88);
       box-shadow:0 10px 24px rgba(0,0,0,.28);
       cursor:pointer;
       display:flex;
@@ -71,49 +70,49 @@
       justify-content:center;
       user-select:none;
       z-index:30;
+      transition:transform .08s ease, opacity .12s ease;
     }
     .navBtn:active{ transform:translateY(1px); }
-    .navBtn[disabled]{ opacity:.35; cursor:not-allowed; }
+    .navBtn[disabled]{ opacity:.28; cursor:not-allowed; }
 
-    .prev{ left:12px; }
-    .next{ right:12px; }
+    .prev{ left:14px; }
+    .next{ right:14px; }
 
-    /* 기호(< >): 진한 회색/검정 */
     .chev{
       font-size:18px;
       font-weight:900;
-      color:#111;
+      color:#111; /* 진한 회색/검정 */
       line-height:1;
       transform:translateY(-1px);
     }
 
-    /* Page x / y : 하단 중앙, 아주 옅은 회색, 반투명 */
+    /* Page x / y : 하단 중앙, 아주 옅은 회색 + 반투명 */
     .pageInd{
       position:absolute;
-      bottom:12px;
+      bottom:14px;
       left:50%;
       transform:translateX(-50%);
       padding:8px 12px;
       border-radius:999px;
-      background:rgba(255,255,255,0.20);
-      color:rgba(255,255,255,0.65);
+      background:rgba(255,255,255,0.18);
+      color:rgba(255,255,255,0.68);
       font-weight:800;
       font-size:12px;
       letter-spacing:.02em;
       backdrop-filter: blur(6px);
       z-index:25;
       pointer-events:none;
+      white-space:nowrap;
     }
 
-    /* 로딩/에러 */
     .msg{
       position:absolute;
       inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      color:rgba(255,255,255,0.75);
-      font-weight:800;
+      color:rgba(255,255,255,0.78);
+      font-weight:900;
       z-index:10;
       padding:24px;
       text-align:center;
@@ -124,12 +123,16 @@
 <body>
   <div class="wrap">
     <div class="stage" id="stage">
-      <div class="canvasBox"><canvas id="pdfCanvas"></canvas></div>
+      <div class="canvasBox" id="canvasBox">
+        <canvas id="pdfCanvas"></canvas>
+      </div>
 
       <button class="navBtn prev" id="btnPrev" aria-label="Prev">
         <span class="chev">‹</span>
       </button>
+
       <div class="pageInd" id="pageInd">Page 0 / 0</div>
+
       <button class="navBtn next" id="btnNext" aria-label="Next">
         <span class="chev">›</span>
       </button>
@@ -140,28 +143,21 @@
 
 <script>
 (() => {
-  // -------------------------
-  // 0) file= 파라미터
-  // -------------------------
   const qs = new URLSearchParams(location.search);
   const fileUrl = qs.get("file");
-  const msgEl = document.getElementById("msg");
-  const canvas = document.getElementById("pdfCanvas");
-  const ctx = canvas.getContext("2d", { alpha: true });
+
+  const msgEl   = document.getElementById("msg");
+  const stage   = document.getElementById("stage");
+  const box     = document.getElementById("canvasBox");
+  const canvas  = document.getElementById("pdfCanvas");
+  const ctx     = canvas.getContext("2d", { alpha: true });
 
   const btnPrev = document.getElementById("btnPrev");
   const btnNext = document.getElementById("btnNext");
   const pageInd = document.getElementById("pageInd");
-  const stage = document.getElementById("stage");
 
-  function showMsg(t){
-    msgEl.style.display = "flex";
-    msgEl.textContent = t;
-  }
-  function hideMsg(){
-    msgEl.style.display = "none";
-    msgEl.textContent = "";
-  }
+  function showMsg(t){ msgEl.style.display="flex"; msgEl.textContent=t; }
+  function hideMsg(){ msgEl.style.display="none"; msgEl.textContent=""; }
 
   if(!fileUrl){
     showMsg("No PDF file specified. Use ?file=PDF_URL");
@@ -171,21 +167,21 @@
     return;
   }
 
-  // -------------------------
-  // 1) pdf.js worker (CDN)
-  // -------------------------
+  // pdf.js worker
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
 
-  // -------------------------
-  // 2) 상태
-  // -------------------------
   let pdfDoc = null;
   let pageNum = 1;
   let pageCount = 0;
+
   let rendering = false;
-  let pendingRender = false;
-  let lastStageW = 0, lastStageH = 0;
+  let needsRerender = false;
+
+  // 리사이즈 안정화용
+  let lastW = 0, lastH = 0;
+  let rafId = null;
+  let settleTimer = null;
 
   function updateUI(){
     pageInd.textContent = `Page ${pageNum} / ${pageCount || 0}`;
@@ -193,46 +189,45 @@
     btnNext.disabled = (!pdfDoc || pageNum >= pageCount);
   }
 
-  // -------------------------
-  // 3) “최대 확대” 스케일 계산 (EPS 100점 핵심)
-  // - stage 내부에서 페이지가 최대 크기로 보이되 잘리지 않게
-  // -------------------------
-  function computeScale(page){
-    const viewport1 = page.getViewport({ scale: 1 });
-    const w = stage.clientWidth;
-    const h = stage.clientHeight;
+  // ✅ “여백 최소 / 화면 꽉 채움” 스케일
+  // - cover 방식(검은 여백 최소화). 약간의 가장자리 crop 가능.
+  function computeScaleCover(page){
+    const v1 = page.getViewport({ scale: 1 });
 
-    // 안전장치: 0이면 리턴
-    if(w < 10 || h < 10) return 1;
+    const pad = parseFloat(getComputedStyle(box).paddingLeft) || 0;
+    const w = Math.max(10, box.clientWidth  - pad*2);
+    const h = Math.max(10, box.clientHeight - pad*2);
 
-    const scaleX = w / viewport1.width;
-    const scaleY = h / viewport1.height;
+    const sx = w / v1.width;
+    const sy = h / v1.height;
 
-    // "contain" 기반이되, 프레임 역할만 남기고 최대한 키움
-    return Math.min(scaleX, scaleY) * 0.985; // 살짝 여유 (검은 프레임 최소)
+    // cover: 더 큰 쪽을 선택 → 여백 최소
+    // 1.01: 미세 확대(프레임 느낌 살리고 빈 공간 제거)
+    return Math.max(sx, sy) * 1.01;
   }
 
   async function renderPage(){
     if(!pdfDoc) return;
 
-    // 렌더 중이면 한 번만 예약
     if(rendering){
-      pendingRender = true;
+      needsRerender = true;
       return;
     }
     rendering = true;
-    pendingRender = false;
+    needsRerender = false;
 
     try{
       hideMsg();
       const page = await pdfDoc.getPage(pageNum);
-      const scale = computeScale(page);
+
+      const scale = computeScaleCover(page);
       const viewport = page.getViewport({ scale });
 
-      // canvas 고해상도 (레티나 대응)
       const dpr = Math.max(1, window.devicePixelRatio || 1);
+
       canvas.width  = Math.floor(viewport.width * dpr);
       canvas.height = Math.floor(viewport.height * dpr);
+
       canvas.style.width  = Math.floor(viewport.width) + "px";
       canvas.style.height = Math.floor(viewport.height) + "px";
 
@@ -243,14 +238,14 @@
 
       updateUI();
     } catch(e){
-      showMsg("Slide load failed. Check PDF URL or CORS/CDN.");
       console.error(e);
+      showMsg("Slide load failed. Check PDF URL / public access / CDN.");
       btnPrev.disabled = true;
       btnNext.disabled = true;
       pageInd.textContent = "Page 0 / 0";
     } finally{
       rendering = false;
-      if(pendingRender) renderPage();
+      if(needsRerender) renderPage();
     }
   }
 
@@ -266,7 +261,6 @@
     clampPage();
     renderPage();
   });
-
   btnNext.addEventListener("click", () => {
     if(!pdfDoc) return;
     pageNum++;
@@ -274,45 +268,71 @@
     renderPage();
   });
 
-  // -------------------------
-  // 4) Tools 펼침/닫힘 같은 리사이즈에 “즉시 안정화”
-  // - ResizeObserver로 stage 크기 변하면 현재 페이지를 재렌더
-  // -------------------------
-  const ro = new ResizeObserver(() => {
-    const w = stage.clientWidth;
-    const h = stage.clientHeight;
+  // ✅ Tools 펼침/닫힘 “흔들림” 제거 핵심:
+  // - ResizeObserver + window.resize + “settle render(연속 재렌더)” 3중 안전장치
+  function scheduleSettleRender(){
+    // 1) 즉시 1회
+    renderPage();
 
-    // 의미 있는 변화일 때만 재렌더
-    if(Math.abs(w - lastStageW) > 2 || Math.abs(h - lastStageH) > 2){
-      lastStageW = w; lastStageH = h;
+    // 2) 0.6초 동안 살짝 여러번 재렌더 (Tools 애니메이션/레이아웃 settling 흡수)
+    if(settleTimer) clearInterval(settleTimer);
+    let n = 0;
+    settleTimer = setInterval(() => {
+      n++;
       renderPage();
+      if(n >= 6){
+        clearInterval(settleTimer);
+        settleTimer = null;
+      }
+    }, 120);
+  }
+
+  const ro = new ResizeObserver(() => {
+    const w = box.clientWidth;
+    const h = box.clientHeight;
+
+    if(Math.abs(w - lastW) > 2 || Math.abs(h - lastH) > 2){
+      lastW = w; lastH = h;
+      scheduleSettleRender();
     }
   });
   ro.observe(stage);
+  ro.observe(box);
 
-  // -------------------------
-  // 5) PDF 로드
-  // -------------------------
+  window.addEventListener("resize", () => scheduleSettleRender(), { passive:true });
+
+  // display:none → block 전환(탭/Tools)에서 observer가 늦는 케이스 보강
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible") scheduleSettleRender();
+  });
+
+  // 초기 로드 후 한 번 더 settling
+  function afterLoadedKick(){
+    if(rafId) cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => scheduleSettleRender());
+  }
+
   (async () => {
     showMsg("Loading...");
     try{
       const loadingTask = pdfjsLib.getDocument({
         url: fileUrl,
-        // 일부 환경에서 worker/폰트 관련 이슈 줄이기
         useSystemFonts: true,
       });
 
       pdfDoc = await loadingTask.promise;
       pageCount = pdfDoc.numPages || 0;
       pageNum = 1;
-      lastStageW = stage.clientWidth;
-      lastStageH = stage.clientHeight;
 
       updateUI();
+      hideMsg();
       renderPage();
+      afterLoadedKick();
+      setTimeout(afterLoadedKick, 250);
+      setTimeout(afterLoadedKick, 700);
     } catch(e){
-      showMsg("PDF open failed. Verify the URL is public and reachable.");
       console.error(e);
+      showMsg("PDF open failed. Verify the URL is public and reachable.");
     }
   })();
 
