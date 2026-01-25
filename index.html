@@ -2,341 +2,321 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EPS Flipbook Viewer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EPS/TOPIK II Slide Viewer</title>
+
+  <!-- pdf.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
 
   <style>
-    html,body{height:100%;margin:0;background:#0b0f17;color:#e8eefc;font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;}
-    .wrap{height:100%;width:100%;display:flex;flex-direction:column;overflow:hidden;}
-    .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0b0f17;}
+    :root{
+      --bg:#0b1220;
+      --frame:#000;
+      --btnSize:36px;
+    }
+    html,body{height:100%; margin:0; background:var(--bg); font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;}
+    /* 16:9 wrapper를 iframe 쪽에서 주고, viewer는 100%를 꽉 채운다고 가정 */
+    .wrap{
+      height:100%;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--bg);
+      overflow:hidden;
+    }
 
-    /* ✅ 슬라이드: 크게 보이되 "테두리 의식" 최소 */
+    /* 검은 배경은 "프레임 역할"만 */
+    .stage{
+      position:relative;
+      width:100%;
+      height:100%;
+      background:var(--frame);
+      overflow:hidden;
+      border-radius:14px;
+      box-shadow:0 10px 28px rgba(0,0,0,.35);
+    }
+
+    /* 캔버스는 최대 확대 (contain이 아니라 "최대한 키우되 잘리지 않게") */
+    .canvasBox{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:var(--frame);
+    }
     canvas{
-      display:block;max-width:100%;max-height:100%;
-      border-radius:14px;background:#0f1624;
-      box-shadow:0 10px 26px rgba(0,0,0,.45);
+      max-width:100%;
+      max-height:100%;
+      width:auto;
+      height:auto;
+      display:block;
+      background:transparent;
     }
 
-    /* =========================
-       UI MODE A: TOPIK II (BOTTOM BAR)
-       ========================= */
-    .controlBar{
-      position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:999px;
-      background:rgba(15,22,36,.70);
-      border:1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(8px);
-      z-index:8;user-select:none;
-    }
-    .ctrlBtn{
-      min-width:84px;height:40px;
-      display:flex;align-items:center;justify-content:center;
+    /* 버튼: 하단 좌/우, 원형 유지, 텍스트 없음 */
+    .navBtn{
+      position:absolute;
+      bottom:12px;
+      width:var(--btnSize);
+      height:var(--btnSize);
       border-radius:999px;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.14);
-      color:#e8eefc;font-weight:900;font-size:13px;
+      border:none;
+      background:rgba(255,255,255,0.85);
+      box-shadow:0 10px 24px rgba(0,0,0,.28);
       cursor:pointer;
-      transition: transform .12s ease, opacity .12s ease, background .12s ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      user-select:none;
+      z-index:30;
     }
-    .ctrlBtn:hover{ background:rgba(255,255,255,.12); }
-    .ctrlBtn:active{ transform:scale(.98); }
-    .ctrlBtn.disabled{ opacity:.38; cursor:not-allowed; }
-    .pageText{ min-width:92px;text-align:center;font-size:12px;font-weight:950;color:#e8eefc;opacity:.95;padding:0 6px; }
+    .navBtn:active{ transform:translateY(1px); }
+    .navBtn[disabled]{ opacity:.35; cursor:not-allowed; }
 
-    /* =========================
-       UI MODE B: EPS (CORNER BUTTONS)
-       - 콘텐츠 가림 최소화: 상단 모서리 + 더 투명
-       ========================= */
-    .cornerNav{
-      position:absolute;top:12px;left:12px;right:12px;
-      display:flex;justify-content:space-between;align-items:flex-start;
-      z-index:9;pointer-events:none; /* 버튼만 클릭되게 */
-    }
-.cornerBtn{
-  pointer-events:auto;
-  width:44px;height:44px;border-radius:999px;
-  display:flex;align-items:center;justify-content:center;
+    .prev{ left:12px; }
+    .next{ right:12px; }
 
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.18);
-  backdrop-filter: blur(6px);
-
-  color:#ffffff;
-  font-size:22px;
-  font-weight:900;
-
-  opacity:.25;
-  cursor:pointer;
-  user-select:none;
-
-  transition: opacity .15s ease, transform .12s ease;
-}
-
-.stage:hover .cornerBtn{
-  opacity:.85;
-}
-
-.cornerBtn:active{
-  transform:scale(.96);
-}
-
-.cornerBtn.disabled{
-  opacity:.12;
-  cursor:not-allowed;
-}
-
-    /* ✅ 중앙 페이지 배지 (EPS에서만 사용) */
-    .pageBadge{
-      position:absolute;top:12px;left:50%;transform:translateX(-50%);
-      padding:6px 10px;border-radius:999px;
-      background:rgba(15,22,36,.28);
-      border:1px solid rgba(255,255,255,.10);
-      font-size:12px;font-weight:850;
-      z-index:8;user-select:none;
+    /* 기호(< >): 진한 회색/검정 */
+    .chev{
+      font-size:18px;
+      font-weight:900;
+      color:#111;
+      line-height:1;
+      transform:translateY(-1px);
     }
 
-    /* ✅ 좌/우 탭존(공통) */
-    .tapZone{
-      position:absolute;top:0;bottom:0;width:22%;
-      cursor:pointer;user-select:none;z-index:5;
+    /* Page x / y : 하단 중앙, 아주 옅은 회색, 반투명 */
+    .pageInd{
+      position:absolute;
+      bottom:12px;
+      left:50%;
+      transform:translateX(-50%);
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.20);
+      color:rgba(255,255,255,0.65);
+      font-weight:800;
+      font-size:12px;
+      letter-spacing:.02em;
+      backdrop-filter: blur(6px);
+      z-index:25;
+      pointer-events:none;
     }
-    .tapLeft{left:0;}
-    .tapRight{right:0;}
 
     /* 로딩/에러 */
     .msg{
-      position:absolute;inset:0;
-      display:flex;align-items:center;justify-content:center;
-      font-size:13px;opacity:.85;text-align:center;padding:16px;
-      z-index:2;
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:rgba(255,255,255,0.75);
+      font-weight:800;
+      z-index:10;
+      padding:24px;
+      text-align:center;
     }
   </style>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 
 <body>
-<div class="wrap">
-  <div class="stage" id="stage">
+  <div class="wrap">
+    <div class="stage" id="stage">
+      <div class="canvasBox"><canvas id="pdfCanvas"></canvas></div>
 
-    <!-- MODE A: TOPIK II -->
-    <div class="controlBar" id="controlBar" aria-label="Page controls">
-      <div class="ctrlBtn" id="btnPrev" aria-label="Previous page">◀ Prev</div>
-      <div class="pageText" id="pageText">Page - / -</div>
-      <div class="ctrlBtn" id="btnNext" aria-label="Next page">Next ▶</div>
+      <button class="navBtn prev" id="btnPrev" aria-label="Prev">
+        <span class="chev">‹</span>
+      </button>
+      <div class="pageInd" id="pageInd">Page 0 / 0</div>
+      <button class="navBtn next" id="btnNext" aria-label="Next">
+        <span class="chev">›</span>
+      </button>
+
+      <div class="msg" id="msg" style="display:none;"></div>
     </div>
-
-    <!-- MODE B: EPS -->
-    <div class="cornerNav" id="cornerNav" aria-label="Corner navigation">
-      <div class="cornerBtn" id="cPrev" aria-label="Previous page">‹</div>
-      <div class="cornerBtn" id="cNext" aria-label="Next page">›</div>
-    </div>
-    <div class="pageBadge" id="pageBadge">Page - / -</div>
-
-    <!-- common -->
-    <div class="tapZone tapLeft" id="tapLeft" aria-label="Previous page"></div>
-    <canvas id="c"></canvas>
-    <div class="tapZone tapRight" id="tapRight" aria-label="Next page"></div>
-
-    <div class="msg" id="msg">Loading…</div>
   </div>
-</div>
 
 <script>
+(() => {
+  // -------------------------
+  // 0) file= 파라미터
+  // -------------------------
+  const qs = new URLSearchParams(location.search);
+  const fileUrl = qs.get("file");
+  const msgEl = document.getElementById("msg");
+  const canvas = document.getElementById("pdfCanvas");
+  const ctx = canvas.getContext("2d", { alpha: true });
+
+  const btnPrev = document.getElementById("btnPrev");
+  const btnNext = document.getElementById("btnNext");
+  const pageInd = document.getElementById("pageInd");
+  const stage = document.getElementById("stage");
+
+  function showMsg(t){
+    msgEl.style.display = "flex";
+    msgEl.textContent = t;
+  }
+  function hideMsg(){
+    msgEl.style.display = "none";
+    msgEl.textContent = "";
+  }
+
+  if(!fileUrl){
+    showMsg("No PDF file specified. Use ?file=PDF_URL");
+    btnPrev.disabled = true;
+    btnNext.disabled = true;
+    pageInd.textContent = "Page 0 / 0";
+    return;
+  }
+
+  // -------------------------
+  // 1) pdf.js worker (CDN)
+  // -------------------------
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
 
-  const $ = (id)=>document.getElementById(id);
-  const canvas = $("c");
-  const ctx = canvas.getContext("2d", { alpha: false });
-  const stage = $("stage");
-  const msg = $("msg");
-
-  // UI elements
-  const controlBar = $("controlBar");
-  const btnPrev = $("btnPrev");
-  const btnNext = $("btnNext");
-  const pageText = $("pageText");
-
-  const cornerNav = $("cornerNav");
-  const cPrev = $("cPrev");
-  const cNext = $("cNext");
-  const badge = $("pageBadge");
-
+  // -------------------------
+  // 2) 상태
+  // -------------------------
   let pdfDoc = null;
   let pageNum = 1;
+  let pageCount = 0;
   let rendering = false;
-  let pending = null;
-  let lastPageViewport1 = null;
+  let pendingRender = false;
+  let lastStageW = 0, lastStageH = 0;
 
-  // ui mode: default 'eps' (corner), topik2 uses 'bottom'
-  let uiMode = "eps";
-
-  function getParams(){
-    const u = new URL(location.href);
-    return {
-      file: u.searchParams.get("file") || "",
-      ui: (u.searchParams.get("ui") || "").toLowerCase()
-    };
+  function updateUI(){
+    pageInd.textContent = `Page ${pageNum} / ${pageCount || 0}`;
+    btnPrev.disabled = (!pdfDoc || pageNum <= 1);
+    btnNext.disabled = (!pdfDoc || pageNum >= pageCount);
   }
 
-  function applyUIMode(mode){
-    uiMode = (mode === "bottom") ? "bottom" : "eps";
+  // -------------------------
+  // 3) “최대 확대” 스케일 계산 (EPS 100점 핵심)
+  // - stage 내부에서 페이지가 최대 크기로 보이되 잘리지 않게
+  // -------------------------
+  function computeScale(page){
+    const viewport1 = page.getViewport({ scale: 1 });
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
 
-    // show/hide
-    controlBar.style.display = (uiMode === "bottom") ? "flex" : "none";
-    cornerNav.style.display  = (uiMode === "bottom") ? "none" : "flex";
-    badge.style.display      = (uiMode === "bottom") ? "none" : "block";
+    // 안전장치: 0이면 리턴
+    if(w < 10 || h < 10) return 1;
+
+    const scaleX = w / viewport1.width;
+    const scaleY = h / viewport1.height;
+
+    // "contain" 기반이되, 프레임 역할만 남기고 최대한 키움
+    return Math.min(scaleX, scaleY) * 0.985; // 살짝 여유 (검은 프레임 최소)
   }
 
-  function setMsg(t){
-    msg.style.display = t ? "flex" : "none";
-    msg.textContent = t || "";
-  }
+  async function renderPage(){
+    if(!pdfDoc) return;
 
-  function setControls(){
-    if(!pdfDoc){
-      pageText.textContent = "Page - / -";
-      badge.textContent = "Page - / -";
-      btnPrev.classList.add("disabled");
-      btnNext.classList.add("disabled");
-      cPrev.classList.add("disabled");
-      cNext.classList.add("disabled");
+    // 렌더 중이면 한 번만 예약
+    if(rendering){
+      pendingRender = true;
       return;
     }
-
-    const txt = `Page ${pageNum} / ${pdfDoc.numPages}`;
-    pageText.textContent = txt;
-    badge.textContent = txt;
-
-    const atFirst = pageNum <= 1;
-    const atLast  = pageNum >= pdfDoc.numPages;
-
-    btnPrev.classList.toggle("disabled", atFirst);
-    btnNext.classList.toggle("disabled", atLast);
-    cPrev.classList.toggle("disabled", atFirst);
-    cNext.classList.toggle("disabled", atLast);
-  }
-
- function calcScaleToFit(viewport1){
-  // ✅ 목표: 슬라이드를 인포그래픽처럼 최대 확대
-  // - ui=bottom(TOPIK2): 하단바 높이만 최소 확보
-  // - eps: 상단 코너버튼/배지만 최소 확보
-
-  const padding = 2; // ✅ 거의 제로 여백
-
-  // ✅ 실제 UI가 차지하는 만큼만 확보 (과예약 제거)
-  const reservedBottom = (uiMode === "bottom") ? 60 : 6; // bottom bar만큼만
-  const reservedTop    = (uiMode === "bottom") ? 6  : 44; // EPS 상단만 최소
-
-  const maxW = Math.max(200, stage.clientWidth  - padding);
-  const maxH = Math.max(200, stage.clientHeight - padding - reservedBottom - reservedTop);
-
-  const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
-
-  return Math.max(0.1, s);
-}
-
-  async function renderPage(num){
     rendering = true;
-    setMsg("Loading…");
-
-    const page = await pdfDoc.getPage(num);
-    lastPageViewport1 = page.getViewport({ scale: 1 });
-
-    const scale = calcScaleToFit(lastPageViewport1);
-    const viewport = page.getViewport({ scale });
-
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    canvas.width  = Math.floor(viewport.width  * dpr);
-    canvas.height = Math.floor(viewport.height * dpr);
-    canvas.style.width  = Math.floor(viewport.width) + "px";
-    canvas.style.height = Math.floor(viewport.height) + "px";
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    pendingRender = false;
 
     try{
+      hideMsg();
+      const page = await pdfDoc.getPage(pageNum);
+      const scale = computeScale(page);
+      const viewport = page.getViewport({ scale });
+
+      // canvas 고해상도 (레티나 대응)
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.width  = Math.floor(viewport.width * dpr);
+      canvas.height = Math.floor(viewport.height * dpr);
+      canvas.style.width  = Math.floor(viewport.width) + "px";
+      canvas.style.height = Math.floor(viewport.height) + "px";
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, viewport.width, viewport.height);
+
       await page.render({ canvasContext: ctx, viewport }).promise;
-      setMsg("");
-    }catch(e){
+
+      updateUI();
+    } catch(e){
+      showMsg("Slide load failed. Check PDF URL or CORS/CDN.");
       console.error(e);
-      setMsg("Render failed. Check console.");
-    }
-
-    setControls();
-    rendering = false;
-
-    if(pending !== null){
-      const p = pending;
-      pending = null;
-      renderPage(p);
+      btnPrev.disabled = true;
+      btnNext.disabled = true;
+      pageInd.textContent = "Page 0 / 0";
+    } finally{
+      rendering = false;
+      if(pendingRender) renderPage();
     }
   }
 
-  function queueRender(num){
-    if(rendering) pending = num;
-    else renderPage(num);
+  function clampPage(){
+    if(!pdfDoc) return;
+    if(pageNum < 1) pageNum = 1;
+    if(pageNum > pageCount) pageNum = pageCount;
   }
 
-  function prev(){
-    if(!pdfDoc || pageNum <= 1) return;
+  btnPrev.addEventListener("click", () => {
+    if(!pdfDoc) return;
     pageNum--;
-    queueRender(pageNum);
-  }
-
-  function next(){
-    if(!pdfDoc || pageNum >= pdfDoc.numPages) return;
-    pageNum++;
-    queueRender(pageNum);
-  }
-
-  // click bindings
-  btnPrev.addEventListener("click", ()=>{ if(!btnPrev.classList.contains("disabled")) prev(); });
-  btnNext.addEventListener("click", ()=>{ if(!btnNext.classList.contains("disabled")) next(); });
-
-  cPrev.addEventListener("click", ()=>{ if(!cPrev.classList.contains("disabled")) prev(); });
-  cNext.addEventListener("click", ()=>{ if(!cNext.classList.contains("disabled")) next(); });
-
-  $("tapLeft").addEventListener("click", prev);
-  $("tapRight").addEventListener("click", next);
-
-  window.addEventListener("keydown", (e)=>{
-    if(e.key === "ArrowLeft") prev();
-    if(e.key === "ArrowRight") next();
+    clampPage();
+    renderPage();
   });
 
-  const ro = new ResizeObserver(()=>{
-    if(pdfDoc && lastPageViewport1){
-      queueRender(pageNum);
+  btnNext.addEventListener("click", () => {
+    if(!pdfDoc) return;
+    pageNum++;
+    clampPage();
+    renderPage();
+  });
+
+  // -------------------------
+  // 4) Tools 펼침/닫힘 같은 리사이즈에 “즉시 안정화”
+  // - ResizeObserver로 stage 크기 변하면 현재 페이지를 재렌더
+  // -------------------------
+  const ro = new ResizeObserver(() => {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+
+    // 의미 있는 변화일 때만 재렌더
+    if(Math.abs(w - lastStageW) > 2 || Math.abs(h - lastStageH) > 2){
+      lastStageW = w; lastStageH = h;
+      renderPage();
     }
   });
   ro.observe(stage);
 
-  async function loadPdf(url){
-    if(!url){
-      setMsg("No PDF URL.\nOpen with ?file=ENCODED_PDF_URL");
-      setControls();
-      return;
-    }
-    setMsg("Loading…");
+  // -------------------------
+  // 5) PDF 로드
+  // -------------------------
+  (async () => {
+    showMsg("Loading...");
     try{
-      const task = pdfjsLib.getDocument({ url });
-      pdfDoc = await task.promise;
-      pageNum = 1;
-      setControls();
-      queueRender(pageNum);
-    }catch(e){
-      console.error(e);
-      setMsg("PDF load failed. Check console.");
-      setControls();
-    }
-  }
+      const loadingTask = pdfjsLib.getDocument({
+        url: fileUrl,
+        // 일부 환경에서 worker/폰트 관련 이슈 줄이기
+        useSystemFonts: true,
+      });
 
-  // init
-  const p = getParams();
-  applyUIMode(p.ui);          // default eps, if ui=bottom -> topik2
-  loadPdf(p.file);
+      pdfDoc = await loadingTask.promise;
+      pageCount = pdfDoc.numPages || 0;
+      pageNum = 1;
+      lastStageW = stage.clientWidth;
+      lastStageH = stage.clientHeight;
+
+      updateUI();
+      renderPage();
+    } catch(e){
+      showMsg("PDF open failed. Verify the URL is public and reachable.");
+      console.error(e);
+    }
+  })();
+
+})();
 </script>
 </body>
 </html>
