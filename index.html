@@ -203,18 +203,26 @@
     cNext.classList.toggle("disabled", atLast);
   }
 
-  function calcScaleToFit(viewport1){
-    // ✅ EPS는 상단 버튼/배지 공간만, TOPIK2는 하단바 공간 확보
-    const padding = (uiMode === "bottom") ? 8 : 10;
-    const reservedBottom = (uiMode === "bottom") ? 56 : 14;
-    const reservedTop = (uiMode === "bottom") ? 12 : 60;
+ function calcScaleToFit(viewport1){
+  // ✅ 목표: 슬라이드를 최대한 크게 (검정 여백 최소화)
+  // - ui=bottom (TOPIK II): 하단 컨트롤바 공간만 최소 확보
+  // - eps: 상단 배지/코너버튼 공간만 최소 확보
 
-    const maxW = Math.max(200, stage.clientWidth - padding);
-    const maxH = Math.max(200, stage.clientHeight - padding - reservedBottom - reservedTop);
+  const padding = 4; // 여백 최소
 
-    const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
-    return Math.max(0.1, s);
-  }
+  const reservedBottom = (uiMode === "bottom") ? 54 : 8;
+  const reservedTop    = (uiMode === "bottom") ? 8  : 54;
+
+  const maxW = Math.max(200, stage.clientWidth  - padding);
+  const maxH = Math.max(
+    200,
+    stage.clientHeight - padding - reservedBottom - reservedTop
+  );
+
+  const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
+
+  return Math.max(0.1, s);
+}
 
   async function renderPage(num){
     rendering = true;
