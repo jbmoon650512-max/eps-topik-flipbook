@@ -28,33 +28,66 @@
       box-shadow:0 12px 30px rgba(0,0,0,.46);
     }
 
-    /* =========================
-       TOP CORNER NAV (EPS/TOPIK2 공통)
-       - 검정 배경에서도 확실히 보이게 "밝게 + 두껍게"
-       - 콘텐츠 가림 최소화를 위해 상단 모서리 고정
-       ========================= */
-    .cornerNav{
-      position:absolute; top:10px; left:10px; right:10px;
-      display:flex; justify-content:space-between; align-items:flex-start;
-      z-index:20; pointer-events:none;
-    }
-    .cornerBtn{
-      pointer-events:auto;
-      width:48px; height:48px; border-radius:999px;
-      display:flex; align-items:center; justify-content:center;
-      background:rgba(255,255,255,.22);
-      border:1px solid rgba(255,255,255,.40);
-      color:#ffffff;
-      font-size:26px; font-weight:1000;
-      cursor:pointer; user-select:none;
-      backdrop-filter: blur(10px);
-      box-shadow:0 12px 26px rgba(0,0,0,.34);
-      opacity:.95;
-      transition: transform .12s ease, opacity .12s ease, background .12s ease;
-    }
-    .cornerBtn:hover{ background:rgba(255,255,255,.28); opacity:1; }
-    .cornerBtn:active{ transform:scale(.96); }
-    .cornerBtn.disabled{ opacity:.25; cursor:not-allowed; }
+/* =========================
+   UI MODE B: EPS (CORNER BUTTONS)
+   - 콘텐츠 가림 최소화: 상단 모서리
+   - ✅ 흰 배경 슬라이드에서도 항상 보이게: "파란 버튼 + 흰 화살표"
+   ========================= */
+.cornerNav{
+  position:absolute;
+  top:12px; left:12px; right:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  z-index:9;
+  pointer-events:none; /* 버튼만 클릭되게 */
+}
+
+.cornerBtn{
+  pointer-events:auto;
+
+  width:44px;
+  height:44px;
+  border-radius:999px;
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  /* ✅ 핵심: 어떤 배경에서도 보이는 "블루 솔리드" */
+  background:rgba(37,99,235,.92);           /* blue */
+  border:1px solid rgba(255,255,255,.55);  /* 밝은 테두리 */
+  color:#ffffff;                            /* 화살표 흰색 */
+
+  font-size:22px;
+  font-weight:1000;
+
+  /* ✅ 흰 바탕에서 떠 보이게 */
+  box-shadow:
+    0 10px 18px rgba(0,0,0,.22),
+    0 0 0 2px rgba(15,23,42,.18);          /* 얇은 외곽 링 */
+
+  opacity:1;
+  cursor:pointer;
+  user-select:none;
+
+  transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+}
+
+.cornerBtn:hover{
+  filter:brightness(1.08);
+}
+
+.cornerBtn:active{
+  transform:scale(.96);
+  filter:brightness(1.12);
+}
+
+.cornerBtn.disabled{
+  opacity:.35;
+  cursor:not-allowed;
+  filter:grayscale(.25);
+}
 
     /* ✅ 중앙 페이지 배지 (상단) */
     .pageBadge{
