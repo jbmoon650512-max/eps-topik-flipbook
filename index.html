@@ -10,64 +10,42 @@
     /* ✅ WordPress iframe 16:9에 맞게 "완전 꽉 차게" */
     .wrap{height:100%;width:100%;display:flex;flex-direction:column;overflow:hidden;}
     .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0b0f17;}
+    canvas{display:block;max-width:100%;max-height:100%;border-radius:14px;background:#0f1624;box-shadow:0 14px 34px rgba(0,0,0,.55);}
 
-    /* ✅ 슬라이드 크게 + "테두리 느낌" 최소화 */
-    canvas{
-      display:block;
-      max-width:100%;
-      max-height:100%;
-      border-radius:14px;
-      background:#0f1624;
-      box-shadow:0 10px 26px rgba(0,0,0,.45); /* 🔽 약화 */
-    }
-
-    /* ✅ 하단 고정 컨트롤 바 (B 방식) */
-    .controlBar{
-      position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:999px;
-      background:rgba(15,22,36,.70);
-      border:1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(8px);
-      z-index:8;
-      user-select:none;
-    }
-    .ctrlBtn{
-      min-width:84px;height:40px;
-      display:flex;align-items:center;justify-content:center;
-      border-radius:999px;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.14);
-      color:#e8eefc;
-      font-weight:900;
-      font-size:13px;
-      cursor:pointer;
-      transition: transform .12s ease, opacity .12s ease, background .12s ease;
-    }
-    .ctrlBtn:hover{ background:rgba(255,255,255,.12); }
-    .ctrlBtn:active{ transform:scale(.98); }
-    .ctrlBtn.disabled{
-      opacity:.38;
-      cursor:not-allowed;
-    }
-    .pageText{
-      min-width:88px;
-      text-align:center;
-      font-size:12px;
-      font-weight:950;
-      color:#e8eefc;
-      opacity:.95;
-      padding:0 6px;
-    }
-
-    /* ✅ 좌/우 터치 영역 (버튼은 없애고, 탭만 유지) */
+    /* ✅ 좌/우 터치 영역 (슬라이드 안에서 넘김) */
     .tapZone{
       position:absolute;top:0;bottom:0;width:22%;
+      display:flex;align-items:center;justify-content:center;
       cursor:pointer;user-select:none;
       z-index:5;
     }
     .tapLeft{left:0;}
     .tapRight{right:0;}
+
+    /* ✅ < > 오버레이 버튼 */
+    .arrow{
+      width:56px;height:56px;border-radius:999px;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(15,22,36,.55);
+      border:1px solid rgba(255,255,255,.15);
+      backdrop-filter: blur(6px);
+      font-size:28px;font-weight:900;
+      color:#e8eefc;
+      opacity:.92;
+      transition: transform .12s ease, opacity .12s ease;
+    }
+    .tapZone:active .arrow{transform:scale(.96);opacity:1;}
+
+    /* 중앙 페이지 표시 (작게) */
+    .pageBadge{
+      position:absolute;top:10px;left:50%;transform:translateX(-50%);
+      padding:6px 10px;border-radius:999px;
+      background:rgba(15,22,36,.55);
+      border:1px solid rgba(255,255,255,.12);
+      font-size:12px;font-weight:800;
+      z-index:6;
+      user-select:none;
+    }
 
     /* 로딩/에러 */
     .msg{
@@ -85,20 +63,17 @@
 <body>
 <div class="wrap">
   <div class="stage" id="stage">
+    <div class="pageBadge" id="pageBadge">Page - / -</div>
 
-    <!-- ✅ 하단 고정 컨트롤 바 (Prev / Page X/Y / Next) -->
-    <div class="controlBar" aria-label="Page controls">
-      <div class="ctrlBtn" id="btnPrev" aria-label="Previous page">◀ Prev</div>
-      <div class="pageText" id="pageText">Page - / -</div>
-      <div class="ctrlBtn" id="btnNext" aria-label="Next page">Next ▶</div>
+    <div class="tapZone tapLeft" id="tapLeft" aria-label="Previous page">
+      <div class="arrow">&lt;</div>
     </div>
-
-    <!-- ✅ 탭 영역(좌/우)으로 넘김 유지 -->
-    <div class="tapZone tapLeft" id="tapLeft" aria-label="Previous page"></div>
 
     <canvas id="c"></canvas>
 
-    <div class="tapZone tapRight" id="tapRight" aria-label="Next page"></div>
+    <div class="tapZone tapRight" id="tapRight" aria-label="Next page">
+      <div class="arrow">&gt;</div>
+    </div>
 
     <div class="msg" id="msg">Loading…</div>
   </div>
@@ -114,9 +89,7 @@
   const ctx = canvas.getContext("2d", { alpha: false });
   const stage = $("stage");
   const msg = $("msg");
-  const pageText = $("pageText");
-  const btnPrev = $("btnPrev");
-  const btnNext = $("btnNext");
+  const badge = $("pageBadge");
 
   let pdfDoc = null;
   let pageNum = 1;
@@ -134,27 +107,19 @@
     msg.textContent = t || "";
   }
 
-  function setControls(){
+  function setBadge(){
     if(!pdfDoc){
-      pageText.textContent = "Page - / -";
-      btnPrev.classList.add("disabled");
-      btnNext.classList.add("disabled");
+      badge.textContent = "Page - / -";
       return;
     }
-    pageText.textContent = `Page ${pageNum} / ${pdfDoc.numPages}`;
-    if(pageNum <= 1) btnPrev.classList.add("disabled");
-    else btnPrev.classList.remove("disabled");
-
-    if(pageNum >= pdfDoc.numPages) btnNext.classList.add("disabled");
-    else btnNext.classList.remove("disabled");
+    badge.textContent = `Page ${pageNum} / ${pdfDoc.numPages}`;
   }
 
-  // ✅ stage 크기에 맞게 scale 계산 (테두리 "의식 안될 정도"로 확대)
+  // ✅ stage 크기에 맞게 scale 계산 (Summary급으로 꽉 차게 보이게)
   function calcScaleToFit(viewport1){
-    const padding = 8;          // ✅ (기존 18) → 더 크게
-    const reservedBottom = 56;  // ✅ (기존 64) → 하단바 공간 최소 안전치
+    const padding = 18; // 테두리/여백 최소치
     const maxW = Math.max(200, stage.clientWidth - padding);
-    const maxH = Math.max(200, stage.clientHeight - padding - reservedBottom);
+    const maxH = Math.max(200, stage.clientHeight - padding);
     const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
     return Math.max(0.1, s);
   }
@@ -188,7 +153,7 @@
       setMsg("Render failed. Check console.");
     }
 
-    setControls();
+    setBadge();
     rendering = false;
 
     if(pending !== null){
@@ -215,11 +180,7 @@
     queueRender(pageNum);
   }
 
-  // ✅ 버튼으로 페이지 넘김 (하단 바)
-  btnPrev.addEventListener("click", ()=>{ if(!btnPrev.classList.contains("disabled")) prev(); });
-  btnNext.addEventListener("click", ()=>{ if(!btnNext.classList.contains("disabled")) next(); });
-
-  // ✅ 좌/우 터치/클릭으로 페이지 넘김 (콘텐츠 위 버튼 없음)
+  // ✅ 좌/우 터치/클릭으로 페이지 넘김
   $("tapLeft").addEventListener("click", prev);
   $("tapRight").addEventListener("click", next);
 
@@ -240,7 +201,6 @@
   async function loadPdf(url){
     if(!url){
       setMsg("No PDF URL.\nOpen with ?file=ENCODED_PDF_URL");
-      setControls();
       return;
     }
 
@@ -249,12 +209,11 @@
       const task = pdfjsLib.getDocument({ url });
       pdfDoc = await task.promise;
       pageNum = 1;
-      setControls();
+      setBadge();
       queueRender(pageNum);
     }catch(e){
       console.error(e);
       setMsg("PDF load failed. Check console.");
-      setControls();
     }
   }
 
