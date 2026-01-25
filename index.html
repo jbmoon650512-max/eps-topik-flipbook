@@ -204,20 +204,18 @@
   }
 
  function calcScaleToFit(viewport1){
-  // ✅ 목표: 슬라이드를 최대한 크게 (검정 여백 최소화)
-  // - ui=bottom (TOPIK II): 하단 컨트롤바 공간만 최소 확보
-  // - eps: 상단 배지/코너버튼 공간만 최소 확보
+  // ✅ 목표: 슬라이드를 인포그래픽처럼 최대 확대
+  // - ui=bottom(TOPIK2): 하단바 높이만 최소 확보
+  // - eps: 상단 코너버튼/배지만 최소 확보
 
-  const padding = 4; // 여백 최소
+  const padding = 2; // ✅ 거의 제로 여백
 
-  const reservedBottom = (uiMode === "bottom") ? 54 : 8;
-  const reservedTop    = (uiMode === "bottom") ? 8  : 54;
+  // ✅ 실제 UI가 차지하는 만큼만 확보 (과예약 제거)
+  const reservedBottom = (uiMode === "bottom") ? 60 : 6; // bottom bar만큼만
+  const reservedTop    = (uiMode === "bottom") ? 6  : 44; // EPS 상단만 최소
 
   const maxW = Math.max(200, stage.clientWidth  - padding);
-  const maxH = Math.max(
-    200,
-    stage.clientHeight - padding - reservedBottom - reservedTop
-  );
+  const maxH = Math.max(200, stage.clientHeight - padding - reservedBottom - reservedTop);
 
   const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
 
