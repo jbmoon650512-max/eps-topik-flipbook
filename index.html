@@ -285,5 +285,19 @@
 
     init();
   </script>
+  // ResizeObserver: detects container size changes (e.g., WP Tools open/close)
+(() => {
+  const frameEl = document.querySelector(".frame");
+  if (!frameEl || !("ResizeObserver" in window)) return;
+
+  let roT = null;
+  const ro = new ResizeObserver(() => {
+    if (!pdfDoc) return;
+    clearTimeout(roT);
+    roT = setTimeout(() => queueRender(pageNum), 80);
+  });
+  ro.observe(frameEl);
+})();
+
 </body>
 </html>
