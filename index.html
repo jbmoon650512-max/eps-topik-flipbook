@@ -3,106 +3,151 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EPS / TOPIK II Flipbook Viewer</title>
+  <title>Flipbook Viewer</title>
 
   <style>
     html,body{
-      height:100%; margin:0;
-      background:#0b0f17; color:#e8eefc;
+      height:100%;
+      margin:0;
+      background:#0b0f17;
+      color:#e8eefc;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;
     }
+
+    /* ✅ WordPress iframe 16:9에 맞게 "완전 꽉 차게" */
     .wrap{height:100%;width:100%;display:flex;flex-direction:column;overflow:hidden;}
     .stage{
-      flex:1; position:relative;
-      display:flex; align-items:center; justify-content:center;
-      overflow:hidden; background:#0b0f17;
+      flex:1;
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      background:#0b0f17;
     }
 
-    /* ✅ 캔버스: 가능한 최대 크기 */
+    /* ✅ 슬라이드: 최대한 크게, 여백 최소 */
     canvas{
       display:block;
       max-width:100%;
       max-height:100%;
       border-radius:18px;
-      background:#0f1624;
-      box-shadow:0 12px 30px rgba(0,0,0,.46);
+      background:#ffffff;
+      box-shadow:0 10px 26px rgba(0,0,0,.45);
     }
 
-/* =========================
-   UI MODE B: EPS (CORNER BUTTONS)
-   - 콘텐츠 가림 최소화: 상단 모서리
-   - ✅ 흰 배경 슬라이드에서도 항상 보이게: "파란 버튼 + 흰 화살표"
-   ========================= */
-.cornerNav{
-  position:absolute;
-  top:12px; left:12px; right:12px;
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  z-index:9;
-  pointer-events:none; /* 버튼만 클릭되게 */
-}
-
-.cornerBtn{
-  pointer-events:auto;
-  width:36px;
-  height:36px;
-  border-radius:999px;
-
-  display:flex;
-  align-items:center;
-  justify-content:center;
-
-  /* ✅ 톤 통일: 밝은 반투명 + 얇은 테두리 */
-  background:rgba(255,255,255,.62);
-  border:1px solid rgba(0,0,0,.18);
-  backdrop-filter: blur(6px);
-
-  /* ✅ 요청: 기호는 검정 */
-  color:#000;
-  font-size:18px;
-  font-weight:1000;
-
-  /* ✅ 흰 슬라이드 위에서도 보이되, 글씨 가림 최소 */
-  box-shadow:0 6px 14px rgba(0,0,0,.14);
-
-  opacity:.70;
-  cursor:pointer;
-  user-select:none;
-  transition: opacity .12s ease, transform .12s ease, background .12s ease;
-}
-.cornerBtn:hover{ opacity:.90; background:rgba(255,255,255,.74); }
-.cornerBtn:active{ transform:scale(.96); opacity:1; }
-.cornerBtn.disabled{ opacity:.22; cursor:not-allowed; }
-
-    /* ✅ 중앙 페이지 배지 (상단) */
-    .pageBadge{
-      position:absolute; top:12px; left:50%; transform:translateX(-50%);
-      padding:6px 12px; border-radius:999px;
-      background:rgba(255,255,255,.14);
-      border:1px solid rgba(255,255,255,.30);
-      font-size:12px; font-weight:950;
-      color:#fff;
-      z-index:19;
-      user-select:none;
-      backdrop-filter: blur(10px);
-      box-shadow:0 12px 26px rgba(0,0,0,.28);
-    }
-
-    /* ✅ 좌/우 탭존(공통) — 버튼이 작아도 넘김 가능 */
+    /* ✅ 좌/우 탭존 (슬라이드 안에서 넘김) */
     .tapZone{
-      position:absolute; top:0; bottom:0; width:22%;
-      cursor:pointer; user-select:none; z-index:10;
+      position:absolute; top:0; bottom:0;
+      width:22%;
+      cursor:pointer;
+      user-select:none;
+      z-index:4;
     }
     .tapLeft{left:0;}
     .tapRight{right:0;}
 
+    /* =========================
+       TOP OVERLAY BAR (UNIFIED)
+       - EPS/TOPIK2 동일
+       - Prev/Next는 중간 회색
+       - 버튼/텍스트는 검정색 계열(흰 슬라이드에서 잘 보이게)
+       ========================= */
+    .topBar{
+      position:absolute;
+      top:10px;
+      left:50%;
+      transform:translateX(-50%);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(0,0,0,.10);
+      backdrop-filter: blur(8px);
+      z-index:9;
+      user-select:none;
+    }
+
+    .topBtn{
+      height:30px;
+      padding:0 10px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      cursor:pointer;
+      border:1px solid rgba(0,0,0,.12);
+      background:rgba(255,255,255,.60);
+      color:#6b7280;            /* ✅ Prev/Next 중간 회색 */
+      font-weight:900;
+      font-size:12px;
+      transition: transform .12s ease, background .12s ease, opacity .12s ease;
+      white-space:nowrap;
+    }
+    .topBtn:hover{ background:rgba(255,255,255,.78); }
+    .topBtn:active{ transform:scale(.98); }
+    .topBtn.disabled{ opacity:.35; cursor:not-allowed; }
+
+    .pageText{
+      min-width:110px;
+      text-align:center;
+      font-size:12px;
+      font-weight:1000;
+      color:#111827;            /* ✅ Page는 진하게 */
+      opacity:.95;
+      padding:0 6px;
+    }
+
+    /* =========================
+       CORNER BUTTONS (UNIFIED)
+       - 44 -> 36 (요청 반영)
+       - 내부 기호는 검정
+       - 배경은 밝은 반투명(검정 배경에서도 바로 보이게)
+       ========================= */
+    .cornerNav{
+      position:absolute;
+      top:10px;
+      left:10px;
+      right:10px;
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      z-index:10;
+      pointer-events:none;
+    }
+
+    .cornerBtn{
+      pointer-events:auto;
+      width:36px; height:36px;          /* ✅ 44 -> 36 */
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:rgba(255,255,255,.70);  /* ✅ 밝게 */
+      border:1px solid rgba(0,0,0,.12);
+      backdrop-filter: blur(8px);
+      color:#111827;                    /* ✅ 기호(아이콘) 검정 */
+      font-size:20px;
+      font-weight:1000;
+      opacity:.95;
+      cursor:pointer;
+      user-select:none;
+      box-shadow:0 10px 22px rgba(0,0,0,.25);
+      transition: transform .12s ease, opacity .12s ease, background .12s ease;
+    }
+    .cornerBtn:hover{ background:rgba(255,255,255,.85); }
+    .cornerBtn:active{ transform:scale(.96); }
+    .cornerBtn.disabled{ opacity:.25; cursor:not-allowed; box-shadow:none; }
+
     /* 로딩/에러 */
     .msg{
       position:absolute; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      font-size:13px; opacity:.85; text-align:center; padding:16px;
-      z-index:5;
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;opacity:.85;text-align:center;padding:16px;
+      z-index:2;
     }
   </style>
 
@@ -114,14 +159,20 @@
 <div class="wrap">
   <div class="stage" id="stage">
 
-    <!-- TOP CORNER NAV (공통) -->
-    <div class="cornerNav" id="cornerNav" aria-label="Corner navigation">
+    <!-- ✅ Unified Top Bar -->
+    <div class="topBar" aria-label="Page controls">
+      <div class="topBtn" id="btnPrev" aria-label="Previous page">◀ Prev</div>
+      <div class="pageText" id="pageText">Page - / -</div>
+      <div class="topBtn" id="btnNext" aria-label="Next page">Next ▶</div>
+    </div>
+
+    <!-- ✅ Unified Corner Buttons -->
+    <div class="cornerNav" aria-label="Corner navigation">
       <div class="cornerBtn" id="cPrev" aria-label="Previous page">‹</div>
       <div class="cornerBtn" id="cNext" aria-label="Next page">›</div>
     </div>
-    <div class="pageBadge" id="pageBadge">Page - / -</div>
 
-    <!-- common -->
+    <!-- ✅ big tap zones -->
     <div class="tapZone tapLeft" id="tapLeft" aria-label="Previous page"></div>
     <canvas id="c"></canvas>
     <div class="tapZone tapRight" id="tapRight" aria-label="Next page"></div>
@@ -131,6 +182,7 @@
 </div>
 
 <script>
+  // worker CDN
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
@@ -140,9 +192,12 @@
   const stage = $("stage");
   const msg = $("msg");
 
+  // UI elements
+  const btnPrev = $("btnPrev");
+  const btnNext = $("btnNext");
+  const pageText = $("pageText");
   const cPrev = $("cPrev");
   const cNext = $("cNext");
-  const badge = $("pageBadge");
 
   let pdfDoc = null;
   let pageNum = 1;
@@ -162,40 +217,41 @@
 
   function setControls(){
     if(!pdfDoc){
-      badge.textContent = "Page - / -";
+      pageText.textContent = "Page - / -";
+      btnPrev.classList.add("disabled");
+      btnNext.classList.add("disabled");
       cPrev.classList.add("disabled");
       cNext.classList.add("disabled");
       return;
     }
 
-    badge.textContent = `Page ${pageNum} / ${pdfDoc.numPages}`;
+    pageText.textContent = `Page ${pageNum} / ${pdfDoc.numPages}`;
+
     const atFirst = pageNum <= 1;
     const atLast  = pageNum >= pdfDoc.numPages;
+
+    btnPrev.classList.toggle("disabled", atFirst);
+    btnNext.classList.toggle("disabled", atLast);
     cPrev.classList.toggle("disabled", atFirst);
     cNext.classList.toggle("disabled", atLast);
   }
 
-  /* ✅ 핵심: EPS/TOPIK2 모두 슬라이드 최대 확대 */
- function calcScaleToFit(viewport1){
-  // ✅ 목표: 검은 배경(여백) 거의 안 보이게 "최대 확대"
-  // - reservedTop/Bottom을 최소화
-  // - scale을 살짝 더 키워서(BOOST) 여백을 먹어버림(필요시 약간 크롭)
+  /* =========================
+     ✅ 핵심: 슬라이드 최대 확대
+     - padding/예약영역 최소화
+     - 검은 배경 여백 거의 제거
+     ========================= */
+  function calcScaleToFit(viewport1){
+    const padding = 4;      // ✅ 여백 최소
+    const reservedTop = 54; // ✅ 상단 버튼 영역만 확보(최소)
+    const reservedBottom = 6;
 
-  const padding = 0;          // 여백 제거
-  const reservedTop = 38;     // 상단 페이지배지/버튼 영역 최소치
-  const reservedBottom = 0;   // 하단 여백 제거
+    const maxW = Math.max(200, stage.clientWidth - padding);
+    const maxH = Math.max(200, stage.clientHeight - padding - reservedTop - reservedBottom);
 
-  const maxW = Math.max(200, stage.clientWidth - padding);
-  const maxH = Math.max(200, stage.clientHeight - padding - reservedTop - reservedBottom);
-
-  let s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
-
-  // ✅ 핵심: 여백을 줄이기 위해 의도적으로 더 확대
-  const BOOST = 1.12;         // 1.08~1.15 사이에서 조절 가능
-  s = s * BOOST;
-
-  return Math.max(0.1, s);
-}
+    const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
+    return Math.max(0.1, s);
+  }
 
   async function renderPage(num){
     rendering = true;
@@ -250,20 +306,23 @@
     queueRender(pageNum);
   }
 
-  // click bindings
+  // Click bindings
+  btnPrev.addEventListener("click", ()=>{ if(!btnPrev.classList.contains("disabled")) prev(); });
+  btnNext.addEventListener("click", ()=>{ if(!btnNext.classList.contains("disabled")) next(); });
+
   cPrev.addEventListener("click", ()=>{ if(!cPrev.classList.contains("disabled")) prev(); });
   cNext.addEventListener("click", ()=>{ if(!cNext.classList.contains("disabled")) next(); });
 
   $("tapLeft").addEventListener("click", prev);
   $("tapRight").addEventListener("click", next);
 
-  // keyboard support
+  // Keyboard
   window.addEventListener("keydown", (e)=>{
     if(e.key === "ArrowLeft") prev();
     if(e.key === "ArrowRight") next();
   });
 
-  // resize 대응
+  // Resize 대응
   const ro = new ResizeObserver(()=>{
     if(pdfDoc && lastPageViewport1){
       queueRender(pageNum);
@@ -277,6 +336,7 @@
       setControls();
       return;
     }
+
     setMsg("Loading…");
     try{
       const task = pdfjsLib.getDocument({ url });
@@ -292,8 +352,7 @@
   }
 
   // init
-  const initial = getFileFromQuery();
-  loadPdf(initial);
+  loadPdf(getFileFromQuery());
 </script>
 </body>
 </html>
