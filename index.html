@@ -58,25 +58,33 @@
   width:44px;height:44px;border-radius:999px;
   display:flex;align-items:center;justify-content:center;
 
-  /* ✅ 대비 강화: 검정 배경에서도 또렷 */
-  background:rgba(255,255,255,.18);
-  border:1px solid rgba(255,255,255,.28);
-  color:#ffffff;
-
-  /* ✅ 가독성 핵심 */
-  box-shadow:0 8px 18px rgba(0,0,0,.45);
-  text-shadow:0 2px 8px rgba(0,0,0,.6);
-
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.18);
   backdrop-filter: blur(6px);
 
-  font-size:22px;font-weight:900;
-  opacity:.92;
-  cursor:pointer;user-select:none;
-  transition: opacity .12s ease, transform .12s ease, background .12s ease;
+  color:#ffffff;
+  font-size:22px;
+  font-weight:900;
+
+  opacity:.25;
+  cursor:pointer;
+  user-select:none;
+
+  transition: opacity .15s ease, transform .12s ease;
 }
-.cornerBtn:hover{ opacity:1; background:rgba(255,255,255,.24); }
-.cornerBtn:active{ transform:scale(.96); }
-.cornerBtn.disabled{ opacity:.25; cursor:not-allowed; }
+
+.stage:hover .cornerBtn{
+  opacity:.85;
+}
+
+.cornerBtn:active{
+  transform:scale(.96);
+}
+
+.cornerBtn.disabled{
+  opacity:.12;
+  cursor:not-allowed;
+}
 
     /* ✅ 중앙 페이지 배지 (EPS에서만 사용) */
     .pageBadge{
