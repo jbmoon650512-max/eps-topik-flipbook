@@ -157,17 +157,26 @@
   }
 
   /* ✅ 핵심: EPS/TOPIK2 모두 슬라이드 최대 확대 */
-  function calcScaleToFit(viewport1){
-    const padding = 0;            // ✅ 여백 최소
-    const reservedTop = 68;       // ✅ 상단 버튼+배지 공간만 확보
-    const reservedBottom = 6;     // ✅ 거의 없음
+ function calcScaleToFit(viewport1){
+  // ✅ 목표: 검은 배경(여백) 거의 안 보이게 "최대 확대"
+  // - reservedTop/Bottom을 최소화
+  // - scale을 살짝 더 키워서(BOOST) 여백을 먹어버림(필요시 약간 크롭)
 
-    const maxW = Math.max(200, stage.clientWidth - padding);
-    const maxH = Math.max(200, stage.clientHeight - padding - reservedTop - reservedBottom);
+  const padding = 0;          // 여백 제거
+  const reservedTop = 38;     // 상단 페이지배지/버튼 영역 최소치
+  const reservedBottom = 0;   // 하단 여백 제거
 
-    const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
-    return Math.max(0.1, s);
-  }
+  const maxW = Math.max(200, stage.clientWidth - padding);
+  const maxH = Math.max(200, stage.clientHeight - padding - reservedTop - reservedBottom);
+
+  let s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
+
+  // ✅ 핵심: 여백을 줄이기 위해 의도적으로 더 확대
+  const BOOST = 1.12;         // 1.08~1.15 사이에서 조절 가능
+  s = s * BOOST;
+
+  return Math.max(0.1, s);
+}
 
   async function renderPage(num){
     rendering = true;
