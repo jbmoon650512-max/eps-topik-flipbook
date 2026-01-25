@@ -2,154 +2,161 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>JB Flipbook Viewer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EPS / TOPIK II Flipbook Viewer</title>
 
   <!-- pdf.js (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.js"></script>
 
   <style>
     :root{
-      --bg:#0b1220;
+      --bg:#070b12;
       --frame:#000;
       --btnSize:36px;
-      --btnBg:rgba(255,255,255,.85);
-      --btnFg:#111827; /* 진한 회색/검정 */
-      --pillBg:rgba(255,255,255,.10);
-      --pillFg:rgba(255,255,255,.45); /* 아주 옅은 회색 */
+      --btnBg: rgba(255,255,255,0.85);
+      --btnFg: rgba(15,23,42,0.95);
+      --pillBg: rgba(255,255,255,0.14);
+      --pillFg: rgba(255,255,255,0.55);
+      --pillBd: rgba(255,255,255,0.12);
     }
-
-    html, body { height:100%; margin:0; background:var(--bg); }
-    body{ overflow:hidden; font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif; }
-
-    /* Viewport: slide is the protagonist */
-    .stage{
-      position:relative;
-      height:100vh;
-      width:100vw;
+    html,body{
+      height:100%;
+      margin:0;
+      background:var(--bg);
+      overflow:hidden;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;
+    }
+    .wrap{
+      position:fixed;
+      inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
       background:var(--bg);
-      padding:8px; /* 검은 배경 최소화 */
-      box-sizing:border-box;
     }
-
-    .frame{
+    /* “검은 배경은 프레임 역할만” */
+    .stage{
       position:relative;
       width:100%;
       height:100%;
       background:var(--frame);
-      border-radius:14px;
-      overflow:hidden;
       display:flex;
       align-items:center;
       justify-content:center;
+      overflow:hidden;
     }
 
+    /* 캔버스는 화면의 주인공 */
     canvas{
-      /* 핵심: 최대 확대 + 여백 최소화 */
-      max-width:100%;
-      max-height:100%;
-      width:auto;
-      height:auto;
       display:block;
       background:transparent;
+      box-shadow:0 10px 28px rgba(0,0,0,0.35);
+      border-radius:10px;
     }
 
-    /* Controls: bottom row */
-    .controls{
+    /* 버튼: 36px, 하단 좌/우, 텍스트 없음 */
+    .navBtn{
       position:absolute;
-      left:0; right:0; bottom:10px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:0 12px;
-      pointer-events:none; /* 버튼만 클릭되게 */
-    }
-
-    .btn{
+      bottom:12px;
       width:var(--btnSize);
       height:var(--btnSize);
       border-radius:999px;
-      border:0;
+      border:1px solid rgba(255,255,255,0.18);
       background:var(--btnBg);
       color:var(--btnFg);
       display:flex;
       align-items:center;
       justify-content:center;
-      font-weight:900;
-      font-size:18px;
       cursor:pointer;
-      box-shadow:0 6px 18px rgba(0,0,0,.28);
-      pointer-events:auto;
       user-select:none;
+      box-shadow:0 10px 24px rgba(0,0,0,0.25);
+      transform:translateZ(0);
     }
-    .btn:disabled{
-      opacity:.35;
+    .navBtn:active{ transform:translateZ(0) scale(0.98); }
+    .navBtn[disabled]{
+      opacity:0.35;
       cursor:not-allowed;
     }
+    #prevBtn{ left:12px; }
+    #nextBtn{ right:12px; }
 
-    /* Page indicator: bottom center, subtle, not blocking */
-    .page-ind{
-      pointer-events:none;
-      padding:6px 10px;
+    /* 아이콘(< >)만 */
+    .navIcon{
+      font-size:18px;
+      font-weight:900;
+      line-height:1;
+      transform:translateY(-1px);
+    }
+
+    /* Page x / y : 하단 중앙, 아주 옅은 회색, 반투명 */
+    .pagePill{
+      position:absolute;
+      bottom:12px;
+      left:50%;
+      transform:translateX(-50%);
+      padding:8px 14px;
       border-radius:999px;
       background:var(--pillBg);
       color:var(--pillFg);
-      font-weight:800;
+      border:1px solid var(--pillBd);
       font-size:12px;
-      letter-spacing:.2px;
+      font-weight:800;
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
+      pointer-events:none;
+      white-space:nowrap;
     }
 
-    /* Small screens: tighter */
-    @media (max-width:768px){
-      .stage{ padding:6px; }
-      .controls{ bottom:8px; padding:0 10px; }
-      .page-ind{ font-size:11px; padding:5px 9px; }
+    /* 에러/로딩 */
+    .msg{
+      position:absolute;
+      top:12px;
+      left:12px;
+      right:12px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.08);
+      color:rgba(255,255,255,0.70);
+      font-size:12px;
+      font-weight:700;
+      display:none;
+    }
+    .msg.show{ display:block; }
+    .msg b{ color:#fff; }
+
+    /* 모바일에서 버튼/필 표시 여백 */
+    @media (max-width:520px){
+      #prevBtn{ left:10px; }
+      #nextBtn{ right:10px; }
+      .navBtn{ bottom:10px; }
+      .pagePill{ bottom:10px; padding:7px 12px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="stage">
-    <div class="frame">
-      <canvas id="pdfCanvas"></canvas>
+  <div class="wrap">
+    <div class="stage" id="stage">
+      <div class="msg" id="msg"></div>
 
-      <div class="controls">
-        <!-- Prev / Next 텍스트는 존재하지 않음 (아이콘만) -->
-        <button class="btn" id="prevBtn" aria-label="Previous page">&lt;</button>
-        <div class="page-ind" id="pageInd">Page 0 / 0</div>
-        <button class="btn" id="nextBtn" aria-label="Next page">&gt;</button>
-      </div>
+      <button class="navBtn" id="prevBtn" aria-label="Previous page">
+        <span class="navIcon">‹</span>
+      </button>
+
+      <div class="pagePill" id="pageInfo">Page 0 / 0</div>
+
+      <button class="navBtn" id="nextBtn" aria-label="Next page">
+        <span class="navIcon">›</span>
+      </button>
+
+      <canvas id="pdfCanvas"></canvas>
     </div>
   </div>
 
   <script>
-    // ===== JB Flipbook Viewer (EPS/TOPIK II 공통) =====
-    // URL pattern: index.html?file=<PDF_URL or relative_path>
-    // Example: index.html?file=pdf/eps/u01/ph.pdf
-
-    const urlParams = new URLSearchParams(location.search);
-    const fileParam = urlParams.get("file");
-
-    // If relative path, resolve against current origin/path.
-    const resolvedPdfUrl = (() => {
-      if (!fileParam) return null;
-      try {
-        // Absolute URL
-        new URL(fileParam);
-        return fileParam;
-      } catch (e) {
-        // Relative -> resolve against current location
-        const base = location.href.split("?")[0];
-        return new URL(fileParam, base).toString();
-      }
-    })();
-
-    // pdf.js worker
+    // ===== pdf.js worker (CDN) =====
+    // 이 줄이 없거나 잘못되면 "0/0"이 가장 자주 발생
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.js";
 
@@ -158,146 +165,177 @@
 
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
-    const pageInd = document.getElementById("pageInd");
+    const pageInfo = document.getElementById("pageInfo");
+    const msg = document.getElementById("msg");
+    const stage = document.getElementById("stage");
 
     let pdfDoc = null;
     let pageNum = 1;
+    let pageCount = 0;
     let rendering = false;
-    let pendingNum = null;
+    let pending = null;
 
-    function setButtons(){
-      if (!pdfDoc) {
-        prevBtn.disabled = true;
-        nextBtn.disabled = true;
-        pageInd.textContent = "Page 0 / 0";
-        return;
-      }
-      prevBtn.disabled = (pageNum <= 1);
-      nextBtn.disabled = (pageNum >= pdfDoc.numPages);
-      pageInd.textContent = `Page ${pageNum} / ${pdfDoc.numPages}`;
+    function showMsg(html){
+      msg.innerHTML = html;
+      msg.classList.add("show");
+    }
+    function hideMsg(){
+      msg.classList.remove("show");
+      msg.innerHTML = "";
     }
 
-    // 핵심: 슬라이드를 “화면의 주인공”으로 만드는 scale
-    function calcBestScale(viewport){
-      // frame의 가용 영역(controls는 overlay라 실제 줄일 필요 없음)
-      const frame = document.querySelector(".frame");
-      const rect = frame.getBoundingClientRect();
+    function getFileParam(){
+      const sp = new URLSearchParams(location.search);
+      let f = sp.get("file") || "";
+      try{ f = decodeURIComponent(f); }catch(e){}
+      return f.trim();
+    }
 
-      // 약간의 안전 여백만 남기고 최대 확대
-      const pad = 10; // 너무 크면 검은 배경이 커짐
-      const availW = Math.max(10, rect.width - pad * 2);
-      const availH = Math.max(10, rect.height - pad * 2);
+    function setButtons(){
+      prevBtn.disabled = !pdfDoc || pageNum <= 1 || rendering;
+      nextBtn.disabled = !pdfDoc || pageNum >= pageCount || rendering;
+      pageInfo.textContent = `Page ${pdfDoc ? pageNum : 0} / ${pdfDoc ? pageCount : 0}`;
+    }
 
-      const scaleW = availW / viewport.width;
-      const scaleH = availH / viewport.height;
+    function computeBestScale(viewport){
+      // stage 안에서 "최대 확대" (검은 배경 최소화)
+      const pad = 20; // 버튼/필이 아래에 있으니 상하 여백 약간 확보
+      const cw = stage.clientWidth;
+      const ch = stage.clientHeight;
 
-      // 화면에 “꽉 차게” 맞추는 scale
-      return Math.min(scaleW, scaleH);
+      // 아래 UI(버튼/필) 영역 고려: 하단 70px 정도 확보
+      const usableW = Math.max(100, cw - pad);
+      const usableH = Math.max(100, ch - (pad + 70));
+
+      const scaleW = usableW / viewport.width;
+      const scaleH = usableH / viewport.height;
+
+      // 화면에 꽉 차게 (조금만 여유)
+      return Math.min(scaleW, scaleH) * 0.995;
     }
 
     async function renderPage(num){
+      if(!pdfDoc) return;
+
       rendering = true;
-
-      const page = await pdfDoc.getPage(num);
-
-      // 1) 1.0 viewport로 기준 크기 확보
-      const baseViewport = page.getViewport({ scale: 1 });
-
-      // 2) best scale 계산 후 최종 viewport
-      const scale = calcBestScale(baseViewport);
-      const viewport = page.getViewport({ scale });
-
-      // 3) 캔버스 픽셀 레티나 대응
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      canvas.width = Math.floor(viewport.width * dpr);
-      canvas.height = Math.floor(viewport.height * dpr);
-      canvas.style.width = Math.floor(viewport.width) + "px";
-      canvas.style.height = Math.floor(viewport.height) + "px";
-
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, viewport.width, viewport.height);
-
-      const renderTask = page.render({ canvasContext: ctx, viewport });
-      await renderTask.promise;
-
-      rendering = false;
       setButtons();
 
-      if (pendingNum !== null){
-        const next = pendingNum;
-        pendingNum = null;
-        renderPage(next);
+      try{
+        const page = await pdfDoc.getPage(num);
+
+        // 1) 기본 viewport
+        const base = page.getViewport({ scale: 1 });
+
+        // 2) 최적 scale 계산
+        const scale = computeBestScale(base);
+        const vp = page.getViewport({ scale });
+
+        // 3) HiDPI 대응
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(vp.width * dpr);
+        canvas.height = Math.floor(vp.height * dpr);
+        canvas.style.width = Math.floor(vp.width) + "px";
+        canvas.style.height = Math.floor(vp.height) + "px";
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, vp.width, vp.height);
+
+        const renderTask = page.render({ canvasContext: ctx, viewport: vp });
+        await renderTask.promise;
+
+        pageNum = num;
+        rendering = false;
+        setButtons();
+
+        if(pending !== null){
+          const next = pending;
+          pending = null;
+          renderPage(next);
+        }
+      }catch(err){
+        rendering = false;
+        setButtons();
+        showMsg(`<b>Render failed.</b> ${String(err && err.message ? err.message : err)}`);
       }
     }
 
     function queueRender(num){
-      if (rendering){
-        pendingNum = num;
+      if(rendering){
+        pending = num;
         return;
       }
       renderPage(num);
     }
 
-    prevBtn.addEventListener("click", () => {
-      if (!pdfDoc || pageNum <= 1) return;
-      pageNum -= 1;
-      queueRender(pageNum);
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    prevBtn.addEventListener("click", ()=>{
+      if(!pdfDoc) return;
+      const n = clamp(pageNum - 1, 1, pageCount);
+      queueRender(n);
+    });
+    nextBtn.addEventListener("click", ()=>{
+      if(!pdfDoc) return;
+      const n = clamp(pageNum + 1, 1, pageCount);
+      queueRender(n);
     });
 
-    nextBtn.addEventListener("click", () => {
-      if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
-      pageNum += 1;
-      queueRender(pageNum);
+    // 키보드(옵션)
+    window.addEventListener("keydown", (e)=>{
+      if(e.key === "ArrowLeft") prevBtn.click();
+      if(e.key === "ArrowRight") nextBtn.click();
     });
 
-  // ResizeObserver: detects container size changes (e.g., WP Tools open/close)
-(() => {
-  const frameEl = document.querySelector(".frame");
-  if (!frameEl || !("ResizeObserver" in window)) return;
+    // 리사이즈 시 현재 페이지 다시 렌더 (Tools 펼침/접힘 대응)
+    let resizeTimer = null;
+    const ro = new ResizeObserver(()=>{
+      if(!pdfDoc) return;
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(()=>queueRender(pageNum), 120);
+    });
+    ro.observe(stage);
 
-  let roT = null;
-  const ro = new ResizeObserver(() => {
-    if (!pdfDoc) return;
-    clearTimeout(roT);
-    roT = setTimeout(() => queueRender(pageNum), 80);
-  });
-  ro.observe(frameEl);
-})();
-
-    async function init(){
-      if (!resolvedPdfUrl){
-        pageInd.textContent = "Page 0 / 0";
-        alert("Missing PDF. Use: index.html?file=YOUR_PDF_URL");
+    async function boot(){
+      const fileUrl = getFileParam();
+      if(!fileUrl){
+        showMsg(`<b>No PDF.</b> Use ?file=PDF_URL`);
         return;
       }
 
+      showMsg(`<b>Loading…</b>`);
+      setButtons();
+
       try{
-        const loadingTask = pdfjsLib.getDocument({ url: resolvedPdfUrl });
+        // PDF 로드 (URL)
+        const loadingTask = pdfjsLib.getDocument({
+          url: fileUrl,
+          withCredentials: false,
+          disableStream: false,
+          disableAutoFetch: false
+        });
+
         pdfDoc = await loadingTask.promise;
+        pageCount = pdfDoc.numPages || 0;
+        hideMsg();
+
         pageNum = 1;
         setButtons();
         await renderPage(pageNum);
-      } catch(err){
-        console.error(err);
-        alert("Failed to load PDF. Check URL / CORS / path.");
+
+      }catch(err){
+        pdfDoc = null;
+        pageCount = 0;
+        setButtons();
+
+        showMsg(
+          `<b>PDF load failed.</b><br>` +
+          `URL: ${fileUrl}<br>` +
+          `${String(err && err.message ? err.message : err)}`
+        );
       }
     }
 
-    init();
+    boot();
   </script>
-  // ResizeObserver: detects container size changes (e.g., WP Tools open/close)
-(() => {
-  const frameEl = document.querySelector(".frame");
-  if (!frameEl || !("ResizeObserver" in window)) return;
-
-  let roT = null;
-  const ro = new ResizeObserver(() => {
-    if (!pdfDoc) return;
-    clearTimeout(roT);
-    roT = setTimeout(() => queueRender(pageNum), 80);
-  });
-  ro.observe(frameEl);
-})();
-
 </body>
 </html>
