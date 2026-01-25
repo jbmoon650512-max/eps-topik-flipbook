@@ -6,109 +6,84 @@
   <title>EPS / TOPIK II Flipbook Viewer</title>
 
   <style>
-    html,body{height:100%;margin:0;background:#0b0f17;color:#e8eefc;font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;}
+    html,body{
+      height:100%; margin:0;
+      background:#0b0f17; color:#e8eefc;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Pretendard,sans-serif;
+    }
     .wrap{height:100%;width:100%;display:flex;flex-direction:column;overflow:hidden;}
-    .stage{flex:1;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0b0f17;}
+    .stage{
+      flex:1; position:relative;
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; background:#0b0f17;
+    }
 
-    /* ✅ 캔버스: 최대한 크게 (테두리 의식 최소화) */
+    /* ✅ 캔버스: 가능한 최대 크기 */
     canvas{
       display:block;
       max-width:100%;
       max-height:100%;
       border-radius:18px;
       background:#0f1624;
-      box-shadow:0 10px 26px rgba(0,0,0,.45);
+      box-shadow:0 12px 30px rgba(0,0,0,.46);
     }
 
     /* =========================
-       MODE: TOPIK II (BOTTOM BAR)
-       ========================= */
-    .controlBar{
-      position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border-radius:999px;
-      background:rgba(15,22,36,.72);
-      border:1px solid rgba(255,255,255,.14);
-      backdrop-filter: blur(10px);
-      z-index:8;user-select:none;
-    }
-    .ctrlBtn{
-      min-width:84px;height:40px;
-      display:flex;align-items:center;justify-content:center;
-      border-radius:999px;
-      background:rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.18);
-      color:#ffffff;font-weight:950;font-size:13px;
-      cursor:pointer;
-      transition: transform .12s ease, opacity .12s ease, background .12s ease;
-      box-shadow:0 10px 22px rgba(0,0,0,.22);
-    }
-    .ctrlBtn:hover{ background:rgba(255,255,255,.14); }
-    .ctrlBtn:active{ transform:scale(.98); }
-    .ctrlBtn.disabled{ opacity:.35; cursor:not-allowed; }
-    .pageText{
-      min-width:92px;text-align:center;
-      font-size:12px;font-weight:950;
-      color:#ffffff;opacity:.92;
-      padding:0 6px;
-    }
-
-    /* =========================
-       MODE: EPS (TOP CORNER BUTTONS)
-       - 검정 배경에서도 확실히 보이게 개선
+       TOP CORNER NAV (EPS/TOPIK2 공통)
+       - 검정 배경에서도 확실히 보이게 "밝게 + 두껍게"
+       - 콘텐츠 가림 최소화를 위해 상단 모서리 고정
        ========================= */
     .cornerNav{
-      position:absolute;top:10px;left:10px;right:10px;
-      display:flex;justify-content:space-between;align-items:flex-start;
-      z-index:9;pointer-events:none;
+      position:absolute; top:10px; left:10px; right:10px;
+      display:flex; justify-content:space-between; align-items:flex-start;
+      z-index:20; pointer-events:none;
     }
     .cornerBtn{
       pointer-events:auto;
-      width:44px;height:44px;border-radius:999px;
-      display:flex;align-items:center;justify-content:center;
-
-      /* ✅ 대비 강화(흰톤 + 그림자) */
-      background:rgba(255,255,255,.14);
-      border:1px solid rgba(255,255,255,.28);
+      width:48px; height:48px; border-radius:999px;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(255,255,255,.22);
+      border:1px solid rgba(255,255,255,.40);
       color:#ffffff;
-
-      backdrop-filter: blur(8px);
-      font-size:22px;font-weight:1000;
-      opacity:.85;
-      cursor:pointer;user-select:none;
-      box-shadow:0 10px 22px rgba(0,0,0,.26);
-      transition: opacity .12s ease, transform .12s ease, background .12s ease;
+      font-size:26px; font-weight:1000;
+      cursor:pointer; user-select:none;
+      backdrop-filter: blur(10px);
+      box-shadow:0 12px 26px rgba(0,0,0,.34);
+      opacity:.95;
+      transition: transform .12s ease, opacity .12s ease, background .12s ease;
     }
-    .cornerBtn:hover{ opacity:.98; background:rgba(255,255,255,.18); }
-    .cornerBtn:active{ transform:scale(.96); opacity:1; }
-    .cornerBtn.disabled{ opacity:.22; cursor:not-allowed; }
+    .cornerBtn:hover{ background:rgba(255,255,255,.28); opacity:1; }
+    .cornerBtn:active{ transform:scale(.96); }
+    .cornerBtn.disabled{ opacity:.25; cursor:not-allowed; }
 
-    /* ✅ EPS 중앙 페이지 배지 */
+    /* ✅ 중앙 페이지 배지 (상단) */
     .pageBadge{
-      position:absolute;top:10px;left:50%;transform:translateX(-50%);
-      padding:6px 10px;border-radius:999px;
-      background:rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.22);
-      font-size:12px;font-weight:900;
-      z-index:8;user-select:none;
+      position:absolute; top:12px; left:50%; transform:translateX(-50%);
+      padding:6px 12px; border-radius:999px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.30);
+      font-size:12px; font-weight:950;
       color:#fff;
-      box-shadow:0 10px 22px rgba(0,0,0,.22);
+      z-index:19;
+      user-select:none;
+      backdrop-filter: blur(10px);
+      box-shadow:0 12px 26px rgba(0,0,0,.28);
     }
 
-    /* ✅ 좌/우 탭존(공통) */
+    /* ✅ 좌/우 탭존(공통) — 버튼이 작아도 넘김 가능 */
     .tapZone{
-      position:absolute;top:0;bottom:0;width:22%;
-      cursor:pointer;user-select:none;z-index:5;
+      position:absolute; top:0; bottom:0; width:22%;
+      cursor:pointer; user-select:none; z-index:10;
     }
     .tapLeft{left:0;}
     .tapRight{right:0;}
 
     /* 로딩/에러 */
     .msg{
-      position:absolute;inset:0;
-      display:flex;align-items:center;justify-content:center;
-      font-size:13px;opacity:.85;text-align:center;padding:16px;
-      z-index:2;
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; opacity:.85; text-align:center; padding:16px;
+      z-index:5;
     }
   </style>
 
@@ -120,14 +95,7 @@
 <div class="wrap">
   <div class="stage" id="stage">
 
-    <!-- MODE A: TOPIK II -->
-    <div class="controlBar" id="controlBar" aria-label="Page controls">
-      <div class="ctrlBtn" id="btnPrev" aria-label="Previous page">◀ Prev</div>
-      <div class="pageText" id="pageText">Page - / -</div>
-      <div class="ctrlBtn" id="btnNext" aria-label="Next page">Next ▶</div>
-    </div>
-
-    <!-- MODE B: EPS -->
+    <!-- TOP CORNER NAV (공통) -->
     <div class="cornerNav" id="cornerNav" aria-label="Corner navigation">
       <div class="cornerBtn" id="cPrev" aria-label="Previous page">‹</div>
       <div class="cornerBtn" id="cNext" aria-label="Next page">›</div>
@@ -153,13 +121,6 @@
   const stage = $("stage");
   const msg = $("msg");
 
-  // UI elements
-  const controlBar = $("controlBar");
-  const btnPrev = $("btnPrev");
-  const btnNext = $("btnNext");
-  const pageText = $("pageText");
-
-  const cornerNav = $("cornerNav");
   const cPrev = $("cPrev");
   const cNext = $("cNext");
   const badge = $("pageBadge");
@@ -170,23 +131,9 @@
   let pending = null;
   let lastPageViewport1 = null;
 
-  // ui mode: default 'eps' (corner). topik2 uses 'bottom'
-  let uiMode = "eps";
-
-  function getParams(){
+  function getFileFromQuery(){
     const u = new URL(location.href);
-    return {
-      file: u.searchParams.get("file") || "",
-      ui: (u.searchParams.get("ui") || "").toLowerCase()
-    };
-  }
-
-  function applyUIMode(mode){
-    uiMode = (mode === "bottom") ? "bottom" : "eps";
-
-    controlBar.style.display = (uiMode === "bottom") ? "flex" : "none";
-    cornerNav.style.display  = (uiMode === "bottom") ? "none" : "flex";
-    badge.style.display      = (uiMode === "bottom") ? "none" : "block";
+    return u.searchParams.get("file") || "";
   }
 
   function setMsg(t){
@@ -196,39 +143,27 @@
 
   function setControls(){
     if(!pdfDoc){
-      pageText.textContent = "Page - / -";
       badge.textContent = "Page - / -";
-      btnPrev.classList.add("disabled");
-      btnNext.classList.add("disabled");
       cPrev.classList.add("disabled");
       cNext.classList.add("disabled");
       return;
     }
 
-    const txt = `Page ${pageNum} / ${pdfDoc.numPages}`;
-    pageText.textContent = txt;
-    badge.textContent = txt;
-
+    badge.textContent = `Page ${pageNum} / ${pdfDoc.numPages}`;
     const atFirst = pageNum <= 1;
     const atLast  = pageNum >= pdfDoc.numPages;
-
-    btnPrev.classList.toggle("disabled", atFirst);
-    btnNext.classList.toggle("disabled", atLast);
     cPrev.classList.toggle("disabled", atFirst);
     cNext.classList.toggle("disabled", atLast);
   }
 
-  /* ✅ 핵심: 슬라이드를 인포그래픽처럼 “꽉 차게” 보이도록 여백 최소화 */
+  /* ✅ 핵심: EPS/TOPIK2 모두 슬라이드 최대 확대 */
   function calcScaleToFit(viewport1){
-    // TOPIK II: 하단바 공간만 남기고 최대 확장
-    // EPS: 상단 버튼/배지 공간만 최소 확보
-    const padding = 0;
-
-    const reservedBottom = (uiMode === "bottom") ? 66 : 8;
-    const reservedTop    = (uiMode === "bottom") ? 6  : 56;
+    const padding = 0;            // ✅ 여백 최소
+    const reservedTop = 68;       // ✅ 상단 버튼+배지 공간만 확보
+    const reservedBottom = 6;     // ✅ 거의 없음
 
     const maxW = Math.max(200, stage.clientWidth - padding);
-    const maxH = Math.max(200, stage.clientHeight - padding - reservedBottom - reservedTop);
+    const maxH = Math.max(200, stage.clientHeight - padding - reservedTop - reservedBottom);
 
     const s = Math.min(maxW / viewport1.width, maxH / viewport1.height);
     return Math.max(0.1, s);
@@ -288,20 +223,19 @@
   }
 
   // click bindings
-  btnPrev.addEventListener("click", ()=>{ if(!btnPrev.classList.contains("disabled")) prev(); });
-  btnNext.addEventListener("click", ()=>{ if(!btnNext.classList.contains("disabled")) next(); });
-
   cPrev.addEventListener("click", ()=>{ if(!cPrev.classList.contains("disabled")) prev(); });
   cNext.addEventListener("click", ()=>{ if(!cNext.classList.contains("disabled")) next(); });
 
   $("tapLeft").addEventListener("click", prev);
   $("tapRight").addEventListener("click", next);
 
+  // keyboard support
   window.addEventListener("keydown", (e)=>{
     if(e.key === "ArrowLeft") prev();
     if(e.key === "ArrowRight") next();
   });
 
+  // resize 대응
   const ro = new ResizeObserver(()=>{
     if(pdfDoc && lastPageViewport1){
       queueRender(pageNum);
@@ -330,9 +264,8 @@
   }
 
   // init
-  const p = getParams();
-  applyUIMode(p.ui);     // ui=bottom -> TOPIK II bottom bar
-  loadPdf(p.file);
+  const initial = getFileFromQuery();
+  loadPdf(initial);
 </script>
 </body>
 </html>
