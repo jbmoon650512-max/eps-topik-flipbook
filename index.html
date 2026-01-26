@@ -3,18 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="referrer" content="no-referrer" />
   <title>JB Flipbook Viewer</title>
 
-  <!-- ✅ 안정화: UMD 전역(pdfjsLib) 확실한 v3 고정 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
-          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <!-- ✅ PDF.js (Legacy global build: pdfjsLib 보장) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
   <style>
     :root{
       --bg:#0b1220;
-      --panel:#0f172a;
-      --btn:36px;           /* spec: 36px */
+      --btn:36px;          /* ✅ spec: 36px */
       --radius:16px;
     }
     html,body{height:100%; margin:0; background:var(--bg); overflow:hidden;}
@@ -26,6 +23,7 @@
       display:flex; align-items:center; justify-content:center;
     }
 
+    /* ✅ slide area: 최대 확대(검은 배경 최소화) */
     .stage{
       position:relative;
       width:100%;
@@ -44,6 +42,7 @@
       max-height:100%;
     }
 
+    /* ✅ buttons: 좌/우 하단 고정 + 텍스트 없음 */
     .btn{
       width:var(--btn);
       height:var(--btn);
@@ -64,9 +63,20 @@
     .btn:active{ transform:translateY(0); }
     .btn:disabled{ opacity:.25; cursor:not-allowed; }
 
-    .btn-left{ position:absolute; left:14px; bottom:14px; z-index:50; }
-    .btn-right{ position:absolute; right:14px; bottom:14px; z-index:50; }
+    .btn-left{
+      position:absolute;
+      left:14px;
+      bottom:14px;
+      z-index:50;
+    }
+    .btn-right{
+      position:absolute;
+      right:14px;
+      bottom:14px;
+      z-index:50;
+    }
 
+    /* ✅ page indicator: 하단 중앙 */
     .page-ind{
       position:absolute;
       left:50%;
@@ -126,24 +136,14 @@
 
   <script>
     (function(){
-      // ✅ 상대경로도 무조건 절대 URL로 정규화 (EPS가 여기서 잘 죽음)
-      const CDN_BASE = "https://cdn.jsdelivr.net/gh/jbmoon650512-max/eps-topik-flipbook@main/";
-
-      const qs = new URLSearchParams(location.search);
-      let file = qs.get("file") || "";
-
-      // decode once
-      try{ file = decodeURIComponent(file); }catch(e){}
-
-      function normalizeFileUrl(f){
-        if(!f) return "";
-        if(/^https?:\/\//i.test(f)) return f;
-        // "/pdf/..." or "pdf/..."
-        f = f.replace(/^\/+/, "");
-        return CDN_BASE + f;
+      // ✅ worker도 동일 출처로 고정 (혼선/차단 방지)
+      if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
       }
 
-      const pdfUrl = normalizeFileUrl(file);
+      const qs = new URLSearchParams(location.search);
+      let file = qs.get("file"); // expects FULL URL (encoded)
 
       const canvas = document.getElementById("canvas");
       const ctx = canvas.getContext("2d", { alpha:false });
@@ -153,22 +153,11 @@
       const pageInd = document.getElementById("pageInd");
       const toast = document.getElementById("toast");
 
-      // ✅ pdfjsLib 전역 가드
-      if(!window.pdfjsLib){
-        toast.style.display = "block";
-        toast.textContent = "pdfjsLib missing: pdf.min.js failed to load.";
-        return;
-      }
-
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
       let pdfDoc = null;
       let pageNum = 1;
       let isRendering = false;
-      let pendingRender = false;
-      let lastW = 0;
-      let lastH = 0;
+      let pending = false;
+      let lastW = 0, lastH = 0;
 
       function showToast(msg){
         toast.style.display = "block";
@@ -180,7 +169,6 @@
         const total = pdfDoc ? pdfDoc.numPages : 0;
         pageInd.textContent = `Page ${total ? pageNum : 0} / ${total}`;
       }
-
       function setButtons(){
         const total = pdfDoc ? pdfDoc.numPages : 0;
         prevBtn.disabled = !(total && pageNum > 1);
@@ -195,7 +183,11 @@
 
       async function renderPage(num){
         if(!pdfDoc) return;
-        if(isRendering){ pendingRender = true; return; }
+
+        if(isRendering){
+          pending = true;
+          return;
+        }
         isRendering = true;
 
         try{
@@ -207,14 +199,11 @@
           const scale = Math.min(w / unscaled.width, h / unscaled.height);
           const viewport = page.getViewport({ scale });
 
-          // ✅ DPR 적용(선명도+크기 안정)
-          const dpr = window.devicePixelRatio || 1;
-          canvas.style.width = Math.floor(viewport.width) + "px";
-          canvas.style.height = Math.floor(viewport.height) + "px";
-          canvas.width = Math.floor(viewport.width * dpr);
-          canvas.height = Math.floor(viewport.height * dpr);
-          ctx.setTransform(dpr,0,0,dpr,0,0);
-          ctx.clearRect(0,0,viewport.width,viewport.height);
+          canvas.width = Math.floor(viewport.width);
+          canvas.height = Math.floor(viewport.height);
+
+          ctx.setTransform(1,0,0,1,0,0);
+          ctx.clearRect(0,0,canvas.width,canvas.height);
 
           await page.render({ canvasContext: ctx, viewport }).promise;
 
@@ -225,28 +214,43 @@
           pageInd.textContent = "Page 0 / 0";
           prevBtn.disabled = true;
           nextBtn.disabled = true;
-          showToast("Failed to load/render PDF");
+          showToast("Failed to render");
           console.error(e);
         } finally{
           isRendering = false;
-          if(pendingRender){
-            pendingRender = false;
+          if(pending){
+            pending = false;
             renderPage(pageNum);
           }
         }
       }
 
       async function loadPdf(){
-        if(!pdfUrl){
+        if(!window.pdfjsLib){
+          showToast("PDF.js not loaded");
+          console.error("pdfjsLib is missing. Check CDN load / CORB.");
+          return;
+        }
+
+        if(!file){
           showToast("Missing file parameter");
-          setIndicator();
-          setButtons();
+          pageInd.textContent = "Page 0 / 0";
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
           return;
         }
 
         showToast("Loading...");
         try{
-          pdfDoc = await pdfjsLib.getDocument({ url: pdfUrl, withCredentials:false }).promise;
+          // ✅ file 파라미터는 보통 encodeURIComponent 되어 들어옴
+          // 이미 decode된 값이면 그대로 사용해도 문제 없음
+          const url = file;
+
+          pdfDoc = await pdfjsLib.getDocument({
+            url,
+            withCredentials: false
+          }).promise;
+
           pageNum = 1;
           hideToast();
           setIndicator();
@@ -273,11 +277,11 @@
       prevBtn.addEventListener("click", ()=>go(-1));
       nextBtn.addEventListener("click", ()=>go(1));
 
-      // resize 안정화
-      let resizeTimer = null;
+      // ✅ 리사이즈 안정화
+      let t = null;
       function scheduleResize(){
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(()=>{
+        clearTimeout(t);
+        t = setTimeout(()=>{
           if(!pdfDoc) return;
           const { w, h } = stageSize();
           if(Math.abs(w-lastW) > 1 || Math.abs(h-lastH) > 1){
@@ -287,10 +291,10 @@
       }
       window.addEventListener("resize", scheduleResize);
 
-      // WP Runtime에서 강제 리렌더 트리거 가능
+      // ✅ 부모가 강제 리렌더 트리거 가능
       window.addEventListener("message", (ev)=>{
         const msg = ev && ev.data;
-        if(msg === "JB_VIEWER_REFLOW" || (msg && msg.type === "JB_VIEWER_FORCE_RESIZE")){
+        if(msg && msg.type === "JB_VIEWER_FORCE_RESIZE"){
           scheduleResize();
         }
       });
