@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>JB Flipbook Viewer</title>
 
+  <!-- ✅ Preconnect: first-load latency reduction -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://jbmoon650512-max.github.io" crossorigin>
+
   <!-- ✅ PDF.js (Legacy global build: pdfjsLib 보장) -->
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
@@ -143,7 +147,10 @@
       }
 
       const qs = new URLSearchParams(location.search);
-      let file = qs.get("file"); // expects FULL URL (encoded)
+
+      // ✅ file 파라미터: decodeURIComponent 안정화 (이중 인코딩/환경차 방지)
+      let file = qs.get("file") || "";
+      try { file = decodeURIComponent(file); } catch(e) {}
 
       const canvas = document.getElementById("canvas");
       const ctx = canvas.getContext("2d", { alpha:false });
@@ -191,6 +198,7 @@
         isRendering = true;
 
         try{
+          showToast("Rendering page...");
           const page = await pdfDoc.getPage(num);
           const { w, h } = stageSize();
           lastW = w; lastH = h;
@@ -209,6 +217,7 @@
 
           setIndicator();
           setButtons();
+          hideToast();
         } catch(e){
           pdfDoc = null;
           pageInd.textContent = "Page 0 / 0";
@@ -240,22 +249,23 @@
           return;
         }
 
-        showToast("Loading...");
+        showToast("Loading PDF...");
         try{
-          // ✅ file 파라미터는 보통 encodeURIComponent 되어 들어옴
-          // 이미 decode된 값이면 그대로 사용해도 문제 없음
           const url = file;
 
+          // ✅ first-load optimization: focus on first page speed
+          // - disableAutoFetch/disableStream: 환경에 따라 첫 렌더 체감이 좋아짐(특히 모바일)
           pdfDoc = await pdfjsLib.getDocument({
             url,
-            withCredentials: false
+            withCredentials: false,
+            disableAutoFetch: true,
+            disableStream: true
           }).promise;
 
           pageNum = 1;
-          hideToast();
           setIndicator();
           setButtons();
-          renderPage(pageNum);
+          await renderPage(pageNum);
         } catch(e){
           pdfDoc = null;
           pageInd.textContent = "Page 0 / 0";
