@@ -5,29 +5,39 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>JB Flipbook Viewer</title>
 
-  <!-- ✅ Preconnect: first-load latency reduction -->
+  <!-- first-load latency reduction -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="preconnect" href="https://jbmoon650512-max.github.io" crossorigin>
 
-  <!-- ✅ PDF.js (Legacy global build: pdfjsLib 보장) -->
+  <!-- PDF.js -->
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 
   <style>
     :root{
       --bg:#0b1220;
-      --btn:36px;          /* ✅ spec: 36px */
+      --btn:36px;
       --radius:16px;
     }
-    html,body{height:100%; margin:0; background:var(--bg); overflow:hidden;}
-    *{box-sizing:border-box; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
-
-    .wrap{
-      position:fixed; inset:0;
+    html,body{
+      height:100%;
+      margin:0;
       background:var(--bg);
-      display:flex; align-items:center; justify-content:center;
+      overflow:hidden;
+    }
+    *{
+      box-sizing:border-box;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
     }
 
-    /* ✅ slide area: 최대 확대(검은 배경 최소화) */
+    .wrap{
+      position:fixed;
+      inset:0;
+      background:var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
     .stage{
       position:relative;
       width:100%;
@@ -46,7 +56,6 @@
       max-height:100%;
     }
 
-    /* ✅ buttons: 좌/우 하단 고정 + 텍스트 없음 */
     .btn{
       width:var(--btn);
       height:var(--btn);
@@ -59,28 +68,33 @@
       background:rgba(255,255,255,.12);
       color:#fff;
       box-shadow:0 10px 22px rgba(0,0,0,.25);
-      backdrop-filter: blur(6px);
+      backdrop-filter:blur(6px);
       transition:transform .12s ease, background .12s ease, opacity .12s ease;
       user-select:none;
+      z-index:50;
     }
-    .btn:hover{ transform:translateY(-1px); background:rgba(255,255,255,.18); }
+    .btn:hover{
+      transform:translateY(-1px);
+      background:rgba(255,255,255,.18);
+    }
     .btn:active{ transform:translateY(0); }
-    .btn:disabled{ opacity:.25; cursor:not-allowed; }
+    .btn:disabled{
+      opacity:.25;
+      cursor:not-allowed;
+    }
 
     .btn-left{
       position:absolute;
       left:14px;
       bottom:14px;
-      z-index:50;
     }
+
     .btn-right{
       position:absolute;
       right:14px;
       bottom:14px;
-      z-index:50;
     }
 
-    /* ✅ page indicator: 하단 중앙 */
     .page-ind{
       position:absolute;
       left:50%;
@@ -93,7 +107,7 @@
       color:rgba(203,213,225,.78);
       background:rgba(15,23,42,.38);
       border:1px solid rgba(148,163,184,.18);
-      backdrop-filter: blur(6px);
+      backdrop-filter:blur(6px);
       z-index:50;
       pointer-events:none;
     }
@@ -110,8 +124,12 @@
       color:#e2e8f0;
       background:rgba(15,23,42,.55);
       border:1px solid rgba(148,163,184,.18);
-      backdrop-filter: blur(6px);
+      backdrop-filter:blur(6px);
       z-index:60;
+      max-width:min(92vw, 720px);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
   </style>
 </head>
@@ -120,7 +138,7 @@
   <div class="wrap">
     <div class="stage" id="stage">
       <button class="btn btn-left" id="prev" aria-label="Previous">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
@@ -128,7 +146,7 @@
       <canvas id="canvas"></canvas>
 
       <button class="btn btn-right" id="next" aria-label="Next">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
@@ -139,8 +157,7 @@
   </div>
 
   <script>
-    (function(){
-      // ✅ worker도 동일 출처로 고정 (혼선/차단 방지)
+    (function () {
       if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
         pdfjsLib.GlobalWorkerOptions.workerSrc =
           "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
@@ -148,60 +165,73 @@
 
       const qs = new URLSearchParams(location.search);
 
-      // ✅ file 파라미터: decodeURIComponent 안정화 (이중 인코딩/환경차 방지)
-      let file = qs.get("file") || "";
-      try { file = decodeURIComponent(file); } catch(e) {}
+      // 기본 fallback: Unit 08 NP PDF
+      let file = qs.get("file") || "pdf/topik2/t08/np.pdf";
+      try {
+        file = decodeURIComponent(file);
+      } catch (e) {}
 
       const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d", { alpha:false });
+      const ctx = canvas.getContext("2d", { alpha: false });
 
       const prevBtn = document.getElementById("prev");
       const nextBtn = document.getElementById("next");
       const pageInd = document.getElementById("pageInd");
       const toast = document.getElementById("toast");
+      const stage = document.getElementById("stage");
 
       let pdfDoc = null;
       let pageNum = 1;
       let isRendering = false;
       let pending = false;
-      let lastW = 0, lastH = 0;
+      let lastW = 0;
+      let lastH = 0;
 
-      function showToast(msg){
+      function showToast(msg) {
         toast.style.display = "block";
         toast.textContent = msg;
       }
-      function hideToast(){ toast.style.display = "none"; }
 
-      function setIndicator(){
+      function hideToast() {
+        toast.style.display = "none";
+      }
+
+      function setIndicator() {
         const total = pdfDoc ? pdfDoc.numPages : 0;
         pageInd.textContent = `Page ${total ? pageNum : 0} / ${total}`;
       }
-      function setButtons(){
+
+      function setButtons() {
         const total = pdfDoc ? pdfDoc.numPages : 0;
         prevBtn.disabled = !(total && pageNum > 1);
         nextBtn.disabled = !(total && pageNum < total);
       }
 
-      function stageSize(){
-        const stage = document.getElementById("stage");
+      function stageSize() {
         const rect = stage.getBoundingClientRect();
-        return { w: rect.width - 20, h: rect.height - 20 };
+        return {
+          w: Math.max(100, rect.width - 20),
+          h: Math.max(100, rect.height - 20)
+        };
       }
 
-      async function renderPage(num){
-        if(!pdfDoc) return;
+      async function renderPage(num) {
+        if (!pdfDoc) return;
 
-        if(isRendering){
+        if (isRendering) {
           pending = true;
           return;
         }
+
         isRendering = true;
 
-        try{
+        try {
           showToast("Rendering page...");
           const page = await pdfDoc.getPage(num);
+
           const { w, h } = stageSize();
-          lastW = w; lastH = h;
+          lastW = w;
+          lastH = h;
 
           const unscaled = page.getViewport({ scale: 1 });
           const scale = Math.min(w / unscaled.width, h / unscaled.height);
@@ -210,51 +240,50 @@
           canvas.width = Math.floor(viewport.width);
           canvas.height = Math.floor(viewport.height);
 
-          ctx.setTransform(1,0,0,1,0,0);
-          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          await page.render({ canvasContext: ctx, viewport }).promise;
+          await page.render({
+            canvasContext: ctx,
+            viewport
+          }).promise;
 
           setIndicator();
           setButtons();
           hideToast();
-        } catch(e){
+        } catch (e) {
           pdfDoc = null;
           pageInd.textContent = "Page 0 / 0";
           prevBtn.disabled = true;
           nextBtn.disabled = true;
-          showToast("Failed to render");
+          showToast("Failed to render PDF page");
           console.error(e);
-        } finally{
+        } finally {
           isRendering = false;
-          if(pending){
+          if (pending) {
             pending = false;
             renderPage(pageNum);
           }
         }
       }
 
-      async function loadPdf(){
-        if(!window.pdfjsLib){
+      async function loadPdf() {
+        if (!window.pdfjsLib) {
           showToast("PDF.js not loaded");
-          console.error("pdfjsLib is missing. Check CDN load / CORB.");
+          console.error("pdfjsLib is missing");
           return;
         }
 
-        if(!file){
-          showToast("Missing file parameter");
-          pageInd.textContent = "Page 0 / 0";
-          prevBtn.disabled = true;
-          nextBtn.disabled = true;
-          return;
-        }
+        try {
+          // 상대경로/절대경로 해석 안정화
+          const url = new URL(file, location.href).href;
 
-        showToast("Loading PDF...");
-        try{
-          const url = file;
+          if (location.protocol === "file:") {
+            showToast("Local file mode may fail. GitHub Pages or localhost is recommended.");
+          } else {
+            showToast("Loading PDF...");
+          }
 
-          // ✅ first-load optimization: focus on first page speed
-          // - disableAutoFetch/disableStream: 환경에 따라 첫 렌더 체감이 좋아짐(특히 모바일)
           pdfDoc = await pdfjsLib.getDocument({
             url,
             withCredentials: false,
@@ -266,45 +295,49 @@
           setIndicator();
           setButtons();
           await renderPage(pageNum);
-        } catch(e){
+        } catch (e) {
           pdfDoc = null;
           pageInd.textContent = "Page 0 / 0";
           prevBtn.disabled = true;
           nextBtn.disabled = true;
-          showToast("Failed to load PDF");
-          console.error(e);
+          showToast("Failed to load PDF. Use ?file=... and open via GitHub Pages or localhost.");
+          console.error("Failed to load PDF:", e);
         }
       }
 
-      function go(delta){
-        if(!pdfDoc) return;
+      function go(delta) {
+        if (!pdfDoc) return;
         const next = pageNum + delta;
-        if(next < 1 || next > pdfDoc.numPages) return;
+        if (next < 1 || next > pdfDoc.numPages) return;
         pageNum = next;
         renderPage(pageNum);
       }
 
-      prevBtn.addEventListener("click", ()=>go(-1));
-      nextBtn.addEventListener("click", ()=>go(1));
+      prevBtn.addEventListener("click", () => go(-1));
+      nextBtn.addEventListener("click", () => go(1));
 
-      // ✅ 리사이즈 안정화
-      let t = null;
-      function scheduleResize(){
-        clearTimeout(t);
-        t = setTimeout(()=>{
-          if(!pdfDoc) return;
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft") go(-1);
+        if (e.key === "ArrowRight") go(1);
+      });
+
+      let resizeTimer = null;
+      function scheduleResize() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (!pdfDoc) return;
           const { w, h } = stageSize();
-          if(Math.abs(w-lastW) > 1 || Math.abs(h-lastH) > 1){
+          if (Math.abs(w - lastW) > 1 || Math.abs(h - lastH) > 1) {
             renderPage(pageNum);
           }
         }, 80);
       }
+
       window.addEventListener("resize", scheduleResize);
 
-      // ✅ 부모가 강제 리렌더 트리거 가능
-      window.addEventListener("message", (ev)=>{
+      window.addEventListener("message", (ev) => {
         const msg = ev && ev.data;
-        if(msg && msg.type === "JB_VIEWER_FORCE_RESIZE"){
+        if (msg && msg.type === "JB_VIEWER_FORCE_RESIZE") {
           scheduleResize();
         }
       });
